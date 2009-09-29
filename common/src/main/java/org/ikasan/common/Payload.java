@@ -2,49 +2,69 @@
  * $Id$
  * $URL$
  * 
- * ====================================================================
+ * =============================================================================
  * Ikasan Enterprise Integration Platform
- * Copyright (c) 2003-2008 Mizuho International plc. and individual contributors as indicated
- * by the @authors tag. See the copyright.txt in the distribution for a
- * full listing of individual contributors.
+ * 
+ * Distributed under the Modified BSD License.
+ * Copyright notice: The copyright for this software and a full listing 
+ * of individual contributors are as shown in the packaged copyright.txt 
+ * file. 
+ * 
+ * All rights reserved.
  *
- * This is free software; you can redistribute it and/or modify it
- * under the terms of the GNU Lesser General Public License as
- * published by the Free Software Foundation; either version 2.1 of
- * the License, or (at your option) any later version.
+ * Redistribution and use in source and binary forms, with or without 
+ * modification, are permitted provided that the following conditions are met:
  *
- * This software is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
- * Lesser General Public License for more details.
+ *  - Redistributions of source code must retain the above copyright notice, 
+ *    this list of conditions and the following disclaimer.
  *
- * You should have received a copy of the GNU Lesser General Public
- * License along with this software; if not, write to the 
- * Free Software Foundation Europe e.V. Talstrasse 110, 40217 Dusseldorf, Germany 
- * or see the FSF site: http://www.fsfeurope.org/.
- * ====================================================================
+ *  - Redistributions in binary form must reproduce the above copyright notice, 
+ *    this list of conditions and the following disclaimer in the documentation 
+ *    and/or other materials provided with the distribution.
+ *
+ *  - Neither the name of the ORGANIZATION nor the names of its contributors may
+ *    be used to endorse or promote products derived from this software without 
+ *    specific prior written permission.
+ *
+ * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" 
+ * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE 
+ * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE 
+ * DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE 
+ * FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL 
+ * DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR 
+ * SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER 
+ * CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY,
+ * OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE 
+ * USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ * =============================================================================
  */
 package org.ikasan.common;
+
+import java.util.List;
 
 /**
  * Payload providing the generic facade for all data to be moved around as a common object.
  * 
  * @author Ikasan Development Team
  */
-public interface Payload extends MetaDataInterface
+public interface Payload extends Cloneable
 {
-    /** Root name of the payload */
-    public static final String PAYLOAD_ROOT_NAME = "payload";
-
-    /** Constant for the payload counter in the JMS mapMessage */
-    public static final String PAYLOAD_COUNT_KEY = "payloadCount";
+		
 
     /**
-     * Set the content of the payload
-     * 
-     * @param content content to set
-     */
-    public void setContent(final byte[] content);
+	 * Returns the value of the attribute named, or null if no such attribute exists
+	 * 
+	 * @param attributeName
+	 * @return value of the attribute named, or null if no such attribute exists
+	 */
+	public String getAttribute(String attributeName);
+
+    /**
+	 * Returns a List of names of all attributes of this Paylaod
+	 * 
+	 * @return List<String> attribute names
+	 */
+	public List<String> getAttributeNames();
 
     /**
      * Get the content of the payload
@@ -53,49 +73,53 @@ public interface Payload extends MetaDataInterface
      */
     public byte[] getContent();
 
-    /**
-     * Test the equality of two payload instances
-     * 
-     * @param payload payload to test against
-     * @return boolean
-     */
-    public boolean equals(Payload payload);
+ 
 
-    /**
-     * String representation of the payload
+	/**
+	 * Accessor for id
+	 * 
+	 * @return id
+	 */
+	public String getId();
+	
+	/**
+	 * Convenience method giving the size of the payload contents
+	 * 
+	 * @return size of payload contents in bytes
+	 */
+	public long getSize();
+	
+	/**
+	 * Sets an attribute on the Payload, overriding any prior value
+	 * 
+	 * @param attributeName
+	 * @param attributeValue
+	 */
+	public void setAttribute(String attributeName, String attributeValue);
+	
+	/**
+     * Set the content of the payload
      * 
-     * @return String representation of the payload
+     * @param content content to set
      */
-    public String toString();
+    public void setContent(final byte[] content);
+	
+	/**
+	 * Spawns a new child Payload based on this Payload
+	 * 
+	 * @param siblingNo
+	 * @return child Payload
+	 */
+	public Payload spawnChild(int siblingNo);
 
-    /**
-     * String representation of the payload
-     * 
-     * @param length length of representation
-     * @return String representation of the payload
-     */
-    public String toString(int length);
 
-    /** Base64 encode the payload */
-    public void base64EncodePayload();
+	/**
+	 * Clones the Payload
+	 * 
+	 * @return cloned Payload
+	 * @throws CloneNotSupportedException
+	 */
+	public Payload clone() throws CloneNotSupportedException;
 
-    /**
-     * Returns a completely new instance of the payload with a deep copy of all fields. Note the subtle difference in
-     * comparison with spawn() which changes some field values to reflect a newly created instance.
-     * 
-     * @return a Payload
-     * @throws CloneNotSupportedException Exception if clone is not supported by implementer
-     */
-    public Payload clone() throws CloneNotSupportedException;
 
-    /**
-     * Returns a completely new instance of the payload with a deep copy of all fields with the exception of id and
-     * timestamp which are populated with new values to reflect that this is a distinctly new instance from the
-     * original. Note the subtle difference in comparison with clone() which does not change any fields from their
-     * original values.
-     * 
-     * @return a Payload
-     * @throws CloneNotSupportedException Exception if clone is not supported by implementer
-     */
-    public Payload spawn() throws CloneNotSupportedException;
 }

@@ -4,29 +4,43 @@
  * 
  * ====================================================================
  * Ikasan Enterprise Integration Platform
- * Copyright (c) 2003-2008 Mizuho International plc. and individual contributors as indicated
- * by the @authors tag. See the copyright.txt in the distribution for a
- * full listing of individual contributors.
+ * 
+ * Distributed under the Modified BSD License.
+ * Copyright notice: The copyright for this software and a full listing 
+ * of individual contributors are as shown in the packaged copyright.txt 
+ * file. 
+ * 
+ * All rights reserved.
  *
- * This is free software; you can redistribute it and/or modify it
- * under the terms of the GNU Lesser General Public License as
- * published by the Free Software Foundation; either version 2.1 of
- * the License, or (at your option) any later version.
+ * Redistribution and use in source and binary forms, with or without 
+ * modification, are permitted provided that the following conditions are met:
  *
- * This software is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
- * Lesser General Public License for more details.
+ *  - Redistributions of source code must retain the above copyright notice, 
+ *    this list of conditions and the following disclaimer.
  *
- * You should have received a copy of the GNU Lesser General Public
- * License along with this software; if not, write to the 
- * Free Software Foundation Europe e.V. Talstrasse 110, 40217 Dusseldorf, Germany 
- * or see the FSF site: http://www.fsfeurope.org/.
+ *  - Redistributions in binary form must reproduce the above copyright notice, 
+ *    this list of conditions and the following disclaimer in the documentation 
+ *    and/or other materials provided with the distribution.
+ *
+ *  - Neither the name of the ORGANIZATION nor the names of its contributors may
+ *    be used to endorse or promote products derived from this software without 
+ *    specific prior written permission.
+ *
+ * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" 
+ * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE 
+ * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE 
+ * DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE 
+ * FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL 
+ * DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR 
+ * SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER 
+ * CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY,
+ * OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE 
+ * USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  * ====================================================================
  */
 package org.ikasan.framework.component.sequencing;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertTrue;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -37,8 +51,8 @@ import org.ikasan.common.Payload;
 import org.ikasan.framework.component.Event;
 import org.jmock.Expectations;
 import org.jmock.Mockery;
+import org.jmock.Sequence;
 import org.jmock.lib.legacy.ClassImposteriser;
-import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 
@@ -70,7 +84,15 @@ public class SinglePayloadPerEventSplitterTest
     final List<Payload> spawnedEventPayloads = classMockery.mock(List.class, "spawnedEventPayloads");
 
     /** Mock payload */
-    final Payload payload = classMockery.mock(Payload.class, "spawnedEvent");
+    final Payload payload1 = classMockery.mock(Payload.class, "payload1");
+    /** Mock payload */
+    final Payload payload2 = classMockery.mock(Payload.class, "payload2");
+    /** Mock payload */
+    final Payload payload3 = classMockery.mock(Payload.class, "payload3");
+    
+    final String moduleName = "moduleName";
+    
+    final String componentName ="componentName";
 
     /**
      * Setup runs before each test
@@ -93,7 +115,8 @@ public class SinglePayloadPerEventSplitterTest
         throws ResourceException, SequencerException
     {
         final List<Payload> payloads = new ArrayList<Payload>();
-        payloads.add(payload);
+        payloads.add(payload1);
+
         
         // 
         // set expectations
@@ -109,8 +132,10 @@ public class SinglePayloadPerEventSplitterTest
         });
 
         SinglePayloadPerEventSplitter singlePayloadPerEventSplitter = new SinglePayloadPerEventSplitter();
-        List<Event> events = singlePayloadPerEventSplitter.onEvent(event);
+        List<Event> events = singlePayloadPerEventSplitter.onEvent(event, moduleName, componentName);
         assertTrue(events.size() == 1);
+        
+        classMockery.assertIsSatisfied();
     }
 
     /**
@@ -126,9 +151,11 @@ public class SinglePayloadPerEventSplitterTest
         throws ResourceException, SequencerException, CloneNotSupportedException
     {
         final List<Payload> payloads = new ArrayList<Payload>();
-        payloads.add(payload);
-        payloads.add(payload);
-        payloads.add(payload);
+        payloads.add(payload1);
+        payloads.add(payload2);
+        payloads.add(payload3);
+        
+        final Sequence sequence = classMockery.sequence("invocationSequence");
         
         // 
         // set expectations
@@ -137,34 +164,30 @@ public class SinglePayloadPerEventSplitterTest
             {
                 // get the event's payloads
                 one(event).getPayloads();
+                inSequence(sequence);
                 will(returnValue(payloads));
 
                 // spawn one event for each payload
-                exactly(3).of(event).spawn();
+                one(event).spawnChild(moduleName, componentName, 0, payload1);
+                inSequence(sequence);
                 will(returnValue(spawnedEvent));
 
-                // clear each new event's existing payloads
-                exactly(3).of(spawnedEvent).getPayloads();
-                will(returnValue(spawnedEventPayloads));
-                exactly(3).of(spawnedEventPayloads).clear();
-
-                // add the new event's payload
-                exactly(3).of(spawnedEvent).setPayload(payload);
+                one(event).spawnChild(moduleName, componentName, 1, payload2);
+                inSequence(sequence);
+                will(returnValue(spawnedEvent));
+                
+                one(event).spawnChild(moduleName, componentName, 2, payload3);
+                inSequence(sequence);
+                will(returnValue(spawnedEvent));
             }
         });
 
         SinglePayloadPerEventSplitter singlePayloadPerEventSplitter = new SinglePayloadPerEventSplitter();
-        List<Event> events = singlePayloadPerEventSplitter.onEvent(event);
+        List<Event> events = singlePayloadPerEventSplitter.onEvent(event, moduleName, componentName);
         assertTrue(events.size() == 3);
-    }
-
-    /**
-     * Teardown after each test
-     */
-    @After
-    public void tearDown()
-    {
-        // check all expectations were satisfied
+        
         classMockery.assertIsSatisfied();
     }
+
+
 }

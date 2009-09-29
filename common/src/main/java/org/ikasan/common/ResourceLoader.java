@@ -2,27 +2,41 @@
  * $Id$
  * $URL$
  * 
- * ====================================================================
+ * =============================================================================
  * Ikasan Enterprise Integration Platform
- * Copyright (c) 2003-2008 Mizuho International plc. and individual contributors as indicated
- * by the @authors tag. See the copyright.txt in the distribution for a
- * full listing of individual contributors.
+ * 
+ * Distributed under the Modified BSD License.
+ * Copyright notice: The copyright for this software and a full listing 
+ * of individual contributors are as shown in the packaged copyright.txt 
+ * file. 
+ * 
+ * All rights reserved.
  *
- * This is free software; you can redistribute it and/or modify it
- * under the terms of the GNU Lesser General Public License as
- * published by the Free Software Foundation; either version 2.1 of
- * the License, or (at your option) any later version.
+ * Redistribution and use in source and binary forms, with or without 
+ * modification, are permitted provided that the following conditions are met:
  *
- * This software is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
- * Lesser General Public License for more details.
+ *  - Redistributions of source code must retain the above copyright notice, 
+ *    this list of conditions and the following disclaimer.
  *
- * You should have received a copy of the GNU Lesser General Public
- * License along with this software; if not, write to the 
- * Free Software Foundation Europe e.V. Talstrasse 110, 40217 Dusseldorf, Germany 
- * or see the FSF site: http://www.fsfeurope.org/.
- * ====================================================================
+ *  - Redistributions in binary form must reproduce the above copyright notice, 
+ *    this list of conditions and the following disclaimer in the documentation 
+ *    and/or other materials provided with the distribution.
+ *
+ *  - Neither the name of the ORGANIZATION nor the names of its contributors may
+ *    be used to endorse or promote products derived from this software without 
+ *    specific prior written permission.
+ *
+ * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" 
+ * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE 
+ * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE 
+ * DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE 
+ * FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL 
+ * DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR 
+ * SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER 
+ * CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY,
+ * OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE 
+ * USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ * =============================================================================
  */
 package org.ikasan.common;
 
@@ -33,23 +47,12 @@ import java.io.InputStream;
 import java.net.URL;
 import java.util.Properties;
 
-import javax.xml.parsers.DocumentBuilderFactory;
-
 import org.apache.log4j.Logger;
 import org.ikasan.common.factory.ClassInstantiationUtils;
-import org.ikasan.common.factory.EnvelopeFactory;
-import org.ikasan.common.factory.EnvelopeFactoryImpl;
-import org.ikasan.common.factory.JMSMessageFactory;
-import org.ikasan.common.factory.JMSMessageFactoryImpl;
-import org.ikasan.common.factory.PayloadFactory;
-import org.ikasan.common.factory.PayloadFactoryImpl;
 import org.ikasan.common.security.IkasanSecurityService;
 import org.ikasan.common.security.IkasanSecurityServiceImpl;
 import org.ikasan.common.security.SecurityNotConfiguredException;
 import org.ikasan.common.util.ResourceUtils;
-import org.ikasan.common.xml.serializer.EnvelopeXmlSerializer;
-import org.ikasan.common.xml.serializer.PayloadXmlSerializer;
-import org.ikasan.common.xml.serializer.XMLSerializer;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.support.FileSystemXmlApplicationContext;
 import org.springframework.jndi.JndiTemplate;
@@ -124,8 +127,6 @@ public class ResourceLoader implements ServiceLocator
     /** Concrete class for payload */
     protected Class<? extends Payload> payloadClass;
 
-    /** Concrete class for envelope */
-    protected Class<? extends Envelope> envelopeClass;
 
     /** instance of the ikasan platform */
     protected IkasanEnv ikasanEnv = null;
@@ -134,26 +135,12 @@ public class ResourceLoader implements ServiceLocator
     /** instance of the ikasan platform */
     private IkasanSecurityService ikasanSecurityService = null;
 
-    /** A payload Factory */
-    private PayloadFactory payloadFactory;
-
-    /** An envelope Factory */
-    private EnvelopeFactory envelopeFactory;
-
-    /** XML Serialiser/Deserialser for Envelopes */
-    private XMLSerializer<Envelope> envelopeXMLSerializer;
-
-    /** XML Serialiser/Deserialser for Payloads */
-    private XMLSerializer<Payload> payloadXMLSerializer;
 
     /** JNDITemplate for accessing JNDI resources from the JMS server */
     private JndiTemplate jmsJndiTemplate;
 
     /** A commonly used XML parser */
     private CommonXMLParser commonXmlParser;
-
-    /** JMS Message Factory */
-    private JMSMessageFactory jmsMessageFactory;
 
     /**
      * Singleton constructor
@@ -572,97 +559,16 @@ public class ResourceLoader implements ServiceLocator
         return (CommonEnvironment) ClassInstantiationUtils.instantiate(this.environmentImplClass);
     }
 
-    /*
-     * (non-Javadoc)
-     * 
-     * @see org.ikasan.common.ServiceLocator#getPayloadFactory()
-     * 
-     * @deprecated - use your own configured Spring beans to create a PayloadFactory
-     */
-    public PayloadFactory getPayloadFactory()
-    {
-        if (payloadFactory == null)
-        {
-            payloadFactory = new PayloadFactoryImpl(getPayloadClass(), DocumentBuilderFactory.newInstance());
-        }
-        return payloadFactory;
-    }
 
-    /*
-     * (non-Javadoc)
-     * 
-     * @see org.ikasan.common.ServiceLocator#getEnvelopeFactory()
-     */
-    public EnvelopeFactory getEnvelopeFactory()
-    {
-        if (envelopeFactory == null)
-        {
-            envelopeFactory = new EnvelopeFactoryImpl(getEnvelopeClass(), getJMSMessageFactory());
-        }
-        return envelopeFactory;
-    }
 
-    public XMLSerializer<Envelope> getEnvelopeXMLSerializer()
-    {
-        if (envelopeXMLSerializer == null)
-        {
-            envelopeXMLSerializer = new EnvelopeXmlSerializer(getPayloadClass(), getEnvelopeClass());
-        }
-        return envelopeXMLSerializer;
-    }
 
-    public XMLSerializer<Payload> getPayloadXMLSerializer()
-    {
-        if (payloadXMLSerializer == null)
-        {
-            payloadXMLSerializer = new PayloadXmlSerializer(getPayloadClass());
-        }
-        return payloadXMLSerializer;
-    }
 
-    /**
-     * Get the Payload class
-     * 
-     * @return Class of type Payload
-     */
-    private Class<? extends Payload> getPayloadClass()
-    {
-        if (payloadClass == null)
-        {
-            try
-            {
-                payloadClass = (Class<? extends Payload>) Class.forName((String) resources
-                    .get(PayloadFactoryImpl.PAYLOAD_IMPL_CLASS));
-            }
-            catch (ClassNotFoundException e)
-            {
-                throw new CommonRuntimeException(e);
-            }
-        }
-        return payloadClass;
-    }
 
-    /**
-     * Get the envelope class
-     * 
-     * @return Class of type envelope
-     */
-    private Class<? extends Envelope> getEnvelopeClass()
-    {
-        if (envelopeClass == null)
-        {
-            try
-            {
-                envelopeClass = (Class<? extends Envelope>) Class.forName((String) resources
-                    .get(EnvelopeFactoryImpl.ENVELOPE_IMPL_CLASS));
-            }
-            catch (ClassNotFoundException e)
-            {
-                throw new CommonRuntimeException(e);
-            }
-        }
-        return envelopeClass;
-    }
+
+
+
+
+
 
     /*
      * (non-Javadoc)
@@ -678,14 +584,7 @@ public class ResourceLoader implements ServiceLocator
         return commonXmlParser;
     }
 
-    public JMSMessageFactory getJMSMessageFactory()
-    {
-        if (jmsMessageFactory == null)
-        {
-            jmsMessageFactory = new JMSMessageFactoryImpl(getPayloadFactory());
-        }
-        return jmsMessageFactory;
-    }
+
 
     public JndiTemplate getJMSJndiTemplate()
     {

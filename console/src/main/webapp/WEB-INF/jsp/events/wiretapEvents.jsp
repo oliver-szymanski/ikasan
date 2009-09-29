@@ -1,32 +1,46 @@
 <%-- 
-# //
-# // $Id$
-# // $URL$
-# // 
-# // ====================================================================
-# // Ikasan Enterprise Integration Platform
-# // Copyright (c) 2003-2008 Mizuho International plc. and individual contributors as indicated
-# // by the @authors tag. See the copyright.txt in the distribution for a
-# // full listing of individual contributors.
-# //
-# // This is free software; you can redistribute it and/or modify it
-# // under the terms of the GNU Lesser General Public License as
-# // published by the Free Software Foundation; either version 2.1 of
-# // the License, or (at your option) any later version.
-# //
-# // This software is distributed in the hope that it will be useful,
-# // but WITHOUT ANY WARRANTY; without even the implied warranty of
-# // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
-# // Lesser General Public License for more details.
-# //
-# // You should have received a copy of the GNU Lesser General Public
-# // License along with this software; if not, write to the 
-# // Free Software Foundation Europe e.V. Talstrasse 110, 40217 Dusseldorf, Germany 
-# // or see the FSF site: http://www.fsfeurope.org/.
-# // ====================================================================
-# //
-# // Author:  Ikasan Development Team
-# // 
+
+ $Id:
+ $URL: 
+
+ ====================================================================
+ Ikasan Enterprise Integration Platform
+ 
+ Distributed under the Modified BSD License.
+ Copyright notice: The copyright for this software and a full listing 
+ of individual contributors are as shown in the packaged copyright.txt 
+ file. 
+ 
+ All rights reserved.
+
+ Redistribution and use in source and binary forms, with or without 
+ modification, are permitted provided that the following conditions are met:
+
+  - Redistributions of source code must retain the above copyright notice, 
+    this list of conditions and the following disclaimer.
+
+  - Redistributions in binary form must reproduce the above copyright notice, 
+    this list of conditions and the following disclaimer in the documentation 
+    and/or other materials provided with the distribution.
+
+  - Neither the name of the ORGANIZATION nor the names of its contributors may
+    be used to endorse or promote products derived from this software without 
+    specific prior written permission.
+
+ THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" 
+ AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE 
+ IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE 
+ DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE 
+ FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL 
+ DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR 
+ SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER 
+ CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY,
+ OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE 
+ USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ ====================================================================
+
+ Author:  Ikasan Development Team
+ 
 --%>
 <%@ include file="/WEB-INF/jsp/events/eventsTop.jsp"%>
 
@@ -34,20 +48,58 @@
   <script type="text/javascript" src="<c:url value='/js/jquery-ui-1.7.2.custom.min.js'/>"></script>
   <script type="text/javascript">
 
-      /* jquery date picker assistance */
+      /* 
+       * JQuery code
+       * 
+       * Isn't enabled unless the document is 'ready' (e.g. Loaded)
+       * # is how jquery references DOM elements by their id attribute
+       */
       $(document).ready(function()
       {
+        // Start the eventSearchModuleCheckboxes as hidden
+        $('#moduleCheckboxes').hide();
+      
+        // jquery date picker assistance      
         $("#fromDateString").datepicker({dateFormat: 'dd/mm/yy' });
         $("#untilDateString").datepicker({dateFormat: 'dd/mm/yy' });
         
-        $("#fromDateString").change(function() {
+        // If the fromDateString changes then set the fromTimeString to be a default value
+        $("#fromDateString").change(function(){
          $("#fromTimeString").val('00:00:00');
         });
-        
+
+        // If the untilDateString changes then set the untilTimeString to be a default value        
         $("#untilDateString").change(function() {
          $("#untilTimeString").val('00:00:00');
         });
+        
+        // Shows/hides the searchFields div on clicking the link with an ID of "showHideSearchForm"
+        $('a#showHideSearchForm').click(function() {
+            $('#searchFields').toggle(400);
+            return false;
+        });
+
+        // Shows/hides the eventSearchPointToPointFlowProfileCheckboxes and moduleFields divs 
+        // on clicking the link with an ID of "toggleSearchMode"
+        $('a#toggleSearchMode').click(function() {
+            $('#pointToPointFlowProfileCheckboxes').toggle(400);
+            $('#moduleCheckboxes').toggle(400);
+            return false;
+        });
+
       });
+
+
+      function showHideRow(id) {
+        $(document).ready(function(id) {
+          // shows/hides the row king the link with an ID of "showHideSearchForm"
+          $('a#${id}').click(function() {
+              $('#${id}').toggle(400);
+              return false;
+          });
+        });
+      }
+
 
     /* 
      * A function to check/uncheck all checkboxes in a form.
@@ -69,13 +121,13 @@
   </script>
 
 <div class="middle">
-
-    <form method="get" id="wiretapSearchForm" action="" class="dataform fancydataform">
-
+    <a id="showHideSearchForm" href="">Show/Hide Search Form</a>
+    <a id="toggleSearchMode" href="">Toggle Flows vs Modules Search</a>
+    <form method="get" id="wiretapSearchForm" name="wiretapSearchForm" action="" class="dataform fancydataform">
+        <div id="searchFields">
         <c:if test="${errors != ''}">
-            <!-- The list of errors -->
             <c:forEach items="${errors}" var="error">
-                <span class="errorMessages"><c:out value="${error}" /></span><br>
+                <span class="errorMessages"><c:out value="${error}" /></span><br />
             </c:forEach>
         </c:if>
 
@@ -83,21 +135,65 @@
         <fieldset>
             <legend><fmt:message key="wiretap_events_search"/></legend>
             <ol>
-                <li>
+                <li><input type="checkbox" id="selectAll" name="selectAll" <c:if test="${selectAll == 'true'}">checked="checked"</c:if> onclick="checkUncheckAll(this);"/> (de)select all</li>            
+                <li id="pointToPointFlowProfileCheckboxes">
+                    <label for="pointToPointFlowProfiles"><fmt:message key="wiretap_events_pointToPointFlowProfile"/></label>
+                    
+                    <!-- PointToPointProfile Checkboxes -->
+                    <div id="eventSearchPointToPointFlowProfileCheckboxes" class="multiSelectCheckboxes">            
+                        <table id="wiretapSearch" class="searchTable">
+                            <thead>
+                                <tr>
+                                    <td><fmt:message key="wiretap_event_pointToPointFlowProfile_name"/></td>
+                                </tr>
+                            <thead>
+                            <tbody>
+                                <c:forEach items="${pointToPointFlowProfiles}" var="pointToPointFlowProfile">
+                                    <tr>
+                                        <td class="border" valign="top">
+                                            <input id="pointToPointFlowProfileIds" name="pointToPointFlowProfileIds" type="checkbox" value="${pointToPointFlowProfile.id}" <c:forEach items="${searchParams['pointToPointFlowProfileIds']}" var="pointToPointFlowProfileId"><c:if test="${pointToPointFlowProfile.id == pointToPointFlowProfileId}">checked="checked"</c:if></c:forEach> /> <a href="javascript:showHideRow('<c:out value="${pointToPointFlowProfile.id}"/>')" id="<c:out value="${pointToPointFlowProfile.id}"/>"><c:out value="${pointToPointFlowProfile.name}"/></a>
+                                        </td>
+                                    </tr>
+                                    <tr>
+                                        <td name="<c:out value="${pointToPointFlowProfile.name}"/>" id="<c:out value="${pointToPointFlowProfile.name}"/>" class="border" valign="top" style="font-size : 8px;">
+                                            <c:forEach items="${pointToPointFlowProfile.pointToPointFlows}" var="pointToPointFlow">
+                                                <%-- If its the first element is null then list the 2nd item --%>
+                                                <c:if test="${pointToPointFlow.fromModule == null}">
+                                                    <c:if test="${pointToPointFlow.toModule != null}">
+                                                        <c:out value="${pointToPointFlow.toModule.name}" />
+                                                    </c:if>
+                                                </c:if>
+                                                <%-- If the first element is not null and the 2nd element is not null then list the 2nd item (prefixed with an arrow) --%>
+                                                <c:if test="${pointToPointFlow.fromModule != null}">
+                                                    <%-- If its the middle item then list its 2nd element --%>
+                                                    <c:if test="${pointToPointFlow.toModule != null}">
+                                                        --&gt; <c:out value="${pointToPointFlow.toModule.name}" />
+                                                    </c:if>
+                                                </c:if>
+                                                <%-- We don't care about other uses cases for display purposes --%>
+                                            </c:forEach>
+                                        </td>
+                                    </tr>
+                                </c:forEach>
+                            </tbody>
+                        </table>
+                    </div>
+                </li>
+
+                <li id="moduleCheckboxes">
                     <label for="modules"><fmt:message key="wiretap_events_module"/></label>
-                    <input type="checkbox" name="selectAll" <c:if test="${selectAll == 'true'}">checked="checked"</c:if> onclick="checkUncheckAll(this);"/> (de)select all
                     <div id="eventSearchModuleCheckboxes" class="multiSelectCheckboxes">            
                     <table id="wiretapSearch" class="searchTable">
                         <thead>
                             <tr>
                                 <td><fmt:message key="wiretap_event_module_name"/></td>
-                                <td><fmt:message key="wiretap_event_module_position_in_flows"/></td>
+                                <td><fmt:message key="wiretap_event_module_description"/></td>
                             </tr>
                         <thead>
                         <tbody>
                             <c:forEach items="${modules}" var="module">
                                 <tr>
-                                    <td class="border" valign="top"><input name="moduleNames" type="checkbox" value="${module.name}" <c:forEach items="${searchParams['moduleNames']}" var="moduleName"><c:if test="${module.name == moduleName}">checked="checked"</c:if></c:forEach> /> <c:out value="${module.name}"/></td>
+                                    <td class="border" valign="top"><input name="moduleIds" type="checkbox" value="${module.id}" <c:forEach items="${searchParams['moduleIds']}" var="moduleId"><c:if test="${module.id == moduleId}">checked="checked"</c:if></c:forEach> /> <c:out value="${module.name}"/></td>
                                     <td class="border" valign="top"><c:out value="${module.description}" escapeXml="false" /></td>
                                 </tr>
                             </c:forEach>
@@ -105,6 +201,7 @@
                     </table>
                     </div>
                 </li>
+
                 <li>
                     <label for="componentName"><fmt:message key="wiretap_events_component"/></label>
                     <input id="componentName" type="text" name="componentName" value="${searchParams["componentName"]}"/>
@@ -150,10 +247,12 @@
         <p>
             <input type="submit" value="Search for Events" class="controlButton"/>
         </p>
+    
+        </div>
+        <%@ include file="/WEB-INF/jsp/pagedResultsHeader.jsp"%>
+    
     </form>
 
-    <%@ include file="/WEB-INF/jsp/pagedResultsHeader.jsp"%>
-    
     <c:url var="idLink" value="list.htm">
         <c:forEach var="entry" items="${searchParams}">
             <c:forEach var="entryValue" items="${entry.value}">
@@ -163,6 +262,7 @@
        	<c:param name="orderBy" value="id"/>
        	<c:param name="orderAsc" value="${!orderAsc}"/>
         <c:param name="selectAll" value="${selectAll}"/>       	
+        <c:param name="pageSize" value="${pageSize}"/>
     </c:url>
 
     <c:url var="moduleLink" value="list.htm">
@@ -174,6 +274,7 @@
        	<c:param name="orderBy" value="moduleName"/>
        	<c:param name="orderAsc" value="${!orderAsc}"/>
         <c:param name="selectAll" value="${selectAll}"/>       	
+        <c:param name="pageSize" value="${pageSize}"/>
     </c:url>
 
     <c:url var="flowLink" value="list.htm">
@@ -185,6 +286,7 @@
        	<c:param name="orderBy" value="flowName"/>
        	<c:param name="orderAsc" value="${!orderAsc}"/>
         <c:param name="selectAll" value="${selectAll}"/>       	
+        <c:param name="pageSize" value="${pageSize}"/>
     </c:url>
 
     <c:url var="componentLink" value="list.htm">
@@ -196,6 +298,7 @@
         <c:param name="orderBy" value="componentName"/>
         <c:param name="orderAsc" value="${!orderAsc}"/>
         <c:param name="selectAll" value="${selectAll}"/>
+        <c:param name="pageSize" value="${pageSize}"/>
     </c:url>
 
     <c:url var="createdDateTimeLink" value="list.htm">
@@ -207,6 +310,7 @@
         <c:param name="orderBy" value="created"/>
         <c:param name="orderAsc" value="${!orderAsc}"/>
         <c:param name="selectAll" value="${selectAll}"/>        
+        <c:param name="pageSize" value="${pageSize}"/>
     </c:url>
 
     <c:if test="${resultSize > 0}">

@@ -4,24 +4,38 @@
  * 
  * ====================================================================
  * Ikasan Enterprise Integration Platform
- * Copyright (c) 2003-2008 Mizuho International plc. and individual contributors as indicated
- * by the @authors tag. See the copyright.txt in the distribution for a
- * full listing of individual contributors.
+ * 
+ * Distributed under the Modified BSD License.
+ * Copyright notice: The copyright for this software and a full listing 
+ * of individual contributors are as shown in the packaged copyright.txt 
+ * file. 
+ * 
+ * All rights reserved.
  *
- * This is free software; you can redistribute it and/or modify it
- * under the terms of the GNU Lesser General Public License as
- * published by the Free Software Foundation; either version 2.1 of
- * the License, or (at your option) any later version.
+ * Redistribution and use in source and binary forms, with or without 
+ * modification, are permitted provided that the following conditions are met:
  *
- * This software is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
- * Lesser General Public License for more details.
+ *  - Redistributions of source code must retain the above copyright notice, 
+ *    this list of conditions and the following disclaimer.
  *
- * You should have received a copy of the GNU Lesser General Public
- * License along with this software; if not, write to the 
- * Free Software Foundation Europe e.V. Talstrasse 110, 40217 Dusseldorf, Germany 
- * or see the FSF site: http://www.fsfeurope.org/.
+ *  - Redistributions in binary form must reproduce the above copyright notice, 
+ *    this list of conditions and the following disclaimer in the documentation 
+ *    and/or other materials provided with the distribution.
+ *
+ *  - Neither the name of the ORGANIZATION nor the names of its contributors may
+ *    be used to endorse or promote products derived from this software without 
+ *    specific prior written permission.
+ *
+ * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" 
+ * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE 
+ * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE 
+ * DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE 
+ * FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL 
+ * DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR 
+ * SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER 
+ * CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY,
+ * OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE 
+ * USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  * ====================================================================
  */
 package org.ikasan.connector.sftp.outbound;
@@ -37,22 +51,15 @@ import javax.resource.ResourceException;
 import javax.resource.spi.ManagedConnection;
 
 import org.apache.log4j.Logger;
-import org.ikasan.common.MetaDataInterface;
 import org.ikasan.common.Payload;
-import org.ikasan.common.ServiceLocator;
-import org.ikasan.common.component.Format;
-import org.ikasan.common.component.Spec;
 import org.ikasan.common.util.checksum.ChecksumSupplier;
 import org.ikasan.common.util.checksum.Md5ChecksumSupplier;
-import org.springframework.context.ApplicationContext;
-import org.springframework.context.support.ClassPathXmlApplicationContext;
-
 import org.ikasan.connector.ConnectorException;
-import org.ikasan.connector.ResourceLoader;
 import org.ikasan.connector.base.command.ExecutionContext;
 import org.ikasan.connector.base.command.ExecutionOutput;
 import org.ikasan.connector.base.command.TransactionalCommandConnection;
 import org.ikasan.connector.base.command.TransactionalResourceCommand;
+import org.ikasan.connector.basefiletransfer.net.BaseFileTransferMappedRecord;
 import org.ikasan.connector.basefiletransfer.net.ClientListEntry;
 import org.ikasan.connector.basefiletransfer.net.OlderFirstClientListEntryComparator;
 import org.ikasan.connector.basefiletransfer.outbound.BaseFileTransferConnection;
@@ -71,12 +78,13 @@ import org.ikasan.connector.basefiletransfer.outbound.command.util.TargetDirecto
 import org.ikasan.connector.basefiletransfer.outbound.command.util.UnzipNotSupportedException;
 import org.ikasan.connector.basefiletransfer.outbound.command.util.UnzippingFileProvider;
 import org.ikasan.connector.basefiletransfer.outbound.persistence.BaseFileTransferDao;
-import org.ikasan.connector.basefiletransfer.net.BaseFileTransferMappedRecord;
 import org.ikasan.connector.util.chunking.io.ChunkInputStream;
 import org.ikasan.connector.util.chunking.model.FileChunkHeader;
 import org.ikasan.connector.util.chunking.model.FileConstituentHandle;
 import org.ikasan.connector.util.chunking.model.dao.ChunkHeaderLoadException;
 import org.ikasan.connector.util.chunking.model.dao.FileChunkDao;
+import org.springframework.context.ApplicationContext;
+import org.springframework.context.support.ClassPathXmlApplicationContext;
 
 /**
  * This class implements the virtual connection to the SFTP server. An instance
@@ -435,22 +443,7 @@ public class SFTPConnectionImpl extends BaseFileTransferConnectionImpl implement
         return executeCommand(command);
     }
 
-    /**
-     * Determines if we need to handle this as a chunk reference
-     * 
-     * @param payload
-     * @return true if the payload is simply a reference to a set of chunks
-     */
-    private boolean isChunkReference(Payload payload)
-    {
-        boolean result = false;
-        String format = payload.getFormat();
-        if (format != null && Format.REFERENCE.toString().equals(payload.getFormat()))
-        {
-            result = true;
-        }
-        return result;
-    }
+
 
     /**
      * Retrieves lightweight handles to the File Chunks that will be needed for
@@ -552,7 +545,6 @@ public class SFTPConnectionImpl extends BaseFileTransferConnectionImpl implement
         {
             logger.info("checksumming disabled"); //$NON-NLS-1$
         }
-        result.setSrcSystem(clientId);
         return result;
     }
 
@@ -572,27 +564,7 @@ public class SFTPConnectionImpl extends BaseFileTransferConnectionImpl implement
         return result;
     }
 
-    /**
-     * Method used to map an <code>FileChunkHeade</code> object to a
-     * <code>Payload</code> object.
-     * 
-     * @param header The record as returned from the SFTPClient
-     * @return A payload constructed from the record.
-     */
-    public static Payload fileChunkHeaderToPayload(FileChunkHeader header)
-    {
-        // TODO global service locator
-        ServiceLocator serviceLocator = ResourceLoader.getInstance();
-        Payload payload = serviceLocator.getPayloadFactory().newPayload(header.getFileName(), Spec.TEXT_XML,
-            MetaDataInterface.UNDEFINED, header.toXml().getBytes());
-        payload.setFormat(Format.REFERENCE.toString());
-        String componentGroupName = ResourceLoader.getInstance().getProperty("component.group.name");
-        payload.setSrcSystem(componentGroupName);
-        // need to do checksumming
-        payload.setChecksum(header.getInternalMd5Hash());
-        payload.setChecksumAlg(Md5ChecksumSupplier.MD5);
-        return payload;
-    }
+
 
     /**
      * Executes the supplied command

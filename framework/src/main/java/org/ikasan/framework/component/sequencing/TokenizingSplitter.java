@@ -4,24 +4,38 @@
  *
  * ====================================================================
  * Ikasan Enterprise Integration Platform
- * Copyright (c) 2003-2008 Mizuho International plc. and individual contributors as indicated
- * by the @authors tag. See the copyright.txt in the distribution for a
- * full listing of individual contributors.
+ * 
+ * Distributed under the Modified BSD License.
+ * Copyright notice: The copyright for this software and a full listing 
+ * of individual contributors are as shown in the packaged copyright.txt 
+ * file. 
+ * 
+ * All rights reserved.
  *
- * This is free software; you can redistribute it and/or modify it
- * under the terms of the GNU Lesser General Public License as
- * published by the Free Software Foundation; either version 2.1 of
- * the License, or (at your option) any later version.
+ * Redistribution and use in source and binary forms, with or without 
+ * modification, are permitted provided that the following conditions are met:
  *
- * This software is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
- * Lesser General Public License for more details.
+ *  - Redistributions of source code must retain the above copyright notice, 
+ *    this list of conditions and the following disclaimer.
  *
- * You should have received a copy of the GNU Lesser General Public
- * License along with this software; if not, write to the
- * Free Software Foundation Europe e.V. Talstrasse 110, 40217 Dusseldorf, Germany
- * or see the FSF site: http://www.fsfeurope.org/.
+ *  - Redistributions in binary form must reproduce the above copyright notice, 
+ *    this list of conditions and the following disclaimer in the documentation 
+ *    and/or other materials provided with the distribution.
+ *
+ *  - Neither the name of the ORGANIZATION nor the names of its contributors may
+ *    be used to endorse or promote products derived from this software without 
+ *    specific prior written permission.
+ *
+ * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" 
+ * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE 
+ * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE 
+ * DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE 
+ * FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL 
+ * DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR 
+ * SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER 
+ * CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY,
+ * OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE 
+ * USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  * ====================================================================
  */
 package org.ikasan.framework.component.sequencing;
@@ -55,11 +69,13 @@ public class TokenizingSplitter implements Sequencer
 
     /** Encoding */
     private String encoding;
+    
 
     /**
      * Constructor
      * 
      * @param delimiterRegex A regular expression to delimit the incoming event on.
+     * @param payloadFactory factory for Payloads
      */
     public TokenizingSplitter(final String delimiterRegex)
     {
@@ -91,7 +107,7 @@ public class TokenizingSplitter implements Sequencer
      * @throws SequencerException Wrapper for CloneNotSupportedException thrown when cloning <code>Event</code>/
      *             <code>Payload</code>
      */
-    public List<Event> onEvent(Event event) throws SequencerException
+    public List<Event> onEvent(Event event, String moduleName, String componentName) throws SequencerException
     {
         List<Event> returnedEvents = new ArrayList<Event>();
         // TODO - we may need to pop the parent id on each of the spawned events.
@@ -109,12 +125,12 @@ public class TokenizingSplitter implements Sequencer
             {
                 // Get the tokenized list
                 List<Payload> newPayloads = tokenizeToPayloads(payload);
-                for (Payload newPayload : newPayloads)
+                for (int i=0;i<newPayloads.size();i++)
                 {
                     // Create new independent event and clear existing payloads
-                    Event newEvent = event.spawn();
-                    newEvent.getPayloads().clear();
-                    newEvent.setPayload(newPayload);
+                	Payload newPayload = newPayloads.get(i);
+                    Event newEvent = event.spawnChild(moduleName, componentName, i, newPayload);
+
                     // Event to the Event list to be returned
                     returnedEvents.add(newEvent);
                     if (logger.isInfoEnabled())
@@ -178,19 +194,20 @@ public class TokenizingSplitter implements Sequencer
             newPayloads.add(payload);
             return newPayloads;
         }
+        int tokenCount = 0;
         for (String token : tokens)
         {
             if (logger.isDebugEnabled())
             {
                 logger.debug("Creating payload for token [" + token + "]");
             }
-            Payload newPayload = payload.spawn();
-            newPayload.setContent(token.getBytes());
+            Payload newPayload = payload.spawnChild(tokenCount);
             newPayloads.add(newPayload);
             if (logger.isDebugEnabled())
             {
                 logger.debug("Payload id [" + payload.getId() + "] split to payload id [" + newPayload.getId() + "]");
             }
+            tokenCount++;
         }
         if (logger.isDebugEnabled())
         {

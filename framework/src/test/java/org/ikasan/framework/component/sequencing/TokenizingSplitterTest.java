@@ -4,24 +4,38 @@
  *
  * ====================================================================
  * Ikasan Enterprise Integration Platform
- * Copyright (c) 2003-2008 Mizuho International plc. and individual contributors as indicated
- * by the @authors tag. See the copyright.txt in the distribution for a
- * full listing of individual contributors.
+ * 
+ * Distributed under the Modified BSD License.
+ * Copyright notice: The copyright for this software and a full listing 
+ * of individual contributors are as shown in the packaged copyright.txt 
+ * file. 
+ * 
+ * All rights reserved.
  *
- * This is free software; you can redistribute it and/or modify it
- * under the terms of the GNU Lesser General Public License as
- * published by the Free Software Foundation; either version 2.1 of
- * the License, or (at your option) any later version.
+ * Redistribution and use in source and binary forms, with or without 
+ * modification, are permitted provided that the following conditions are met:
  *
- * This software is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
- * Lesser General Public License for more details.
+ *  - Redistributions of source code must retain the above copyright notice, 
+ *    this list of conditions and the following disclaimer.
  *
- * You should have received a copy of the GNU Lesser General Public
- * License along with this software; if not, write to the
- * Free Software Foundation Europe e.V. Talstrasse 110, 40217 Dusseldorf, Germany
- * or see the FSF site: http://www.fsfeurope.org/.
+ *  - Redistributions in binary form must reproduce the above copyright notice, 
+ *    this list of conditions and the following disclaimer in the documentation 
+ *    and/or other materials provided with the distribution.
+ *
+ *  - Neither the name of the ORGANIZATION nor the names of its contributors may
+ *    be used to endorse or promote products derived from this software without 
+ *    specific prior written permission.
+ *
+ * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" 
+ * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE 
+ * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE 
+ * DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE 
+ * FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL 
+ * DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR 
+ * SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER 
+ * CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY,
+ * OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE 
+ * USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  * ====================================================================
  */
 package org.ikasan.framework.component.sequencing;
@@ -68,6 +82,10 @@ public class TokenizingSplitterTest
     final Event event = classMockery.mock(Event.class);
     /** mock payload */
     final Payload payload = classMockery.mock(Payload.class);
+    
+    final String moduleName = "moduleName";
+    
+    final String componentName = "componentName";
 
     /**
      * Real objects
@@ -165,48 +183,47 @@ public class TokenizingSplitterTest
                 exactly(1).of(payload).getContent();
                 will(returnValue(payloadContentStr.getBytes()));
 
-                //Calls when creating third payload
-                exactly(1).of(payload).spawn();
+                //Calls when creating first payload
+                exactly(1).of(payload).spawnChild(0);
                 will(returnValue(firstNewPayload));
                 exactly(1).of(firstNewPayload).setContent(expectedSinglePayloadContent[0].getBytes());
                 exactly(1).of(firstNewPayload).getId();
 
                 //Calls when creating second payload
-                exactly(1).of(payload).spawn();
+                exactly(1).of(payload).spawnChild(1);
                 will(returnValue(secondNewPayload));
                 exactly(1).of(secondNewPayload).setContent(expectedSinglePayloadContent[1].getBytes());
                 exactly(1).of(secondNewPayload).getId();
 
                 //Calls when creating third payload
-                exactly(1).of(payload).spawn();
+                exactly(1).of(payload).spawnChild(2);
                 will(returnValue(thirdNewPayload));
                 exactly(1).of(thirdNewPayload).setContent(expectedSinglePayloadContent[2].getBytes());
                 exactly(1).of(thirdNewPayload).getId();
 
                 //Calls when creating first event
-                exactly(1).of(event).spawn();
+                one(event).spawnChild(moduleName, componentName, 0, firstNewPayload);
                 will(returnValue(firstNewEvent));
-                exactly(1).of(firstNewEvent).getPayloads();
-                exactly(1).of(firstNewEvent).setPayload(firstNewPayload);
+//                exactly(1).of(firstNewEvent).getPayloads();
+//                exactly(1).of(firstNewEvent).setPayload(firstNewPayload);
                 exactly(1).of(firstNewEvent).getId();
 
                 //Calls when creating second event
-                exactly(1).of(event).spawn();
+                one(event).spawnChild(moduleName, componentName, 1, secondNewPayload);
                 will(returnValue(secondNewEvent));
-                exactly(1).of(secondNewEvent).getPayloads();
-                exactly(1).of(secondNewEvent).setPayload(secondNewPayload);
+//                exactly(1).of(secondNewEvent).getPayloads();
+//                exactly(1).of(secondNewEvent).setPayload(secondNewPayload);
                 exactly(1).of(secondNewEvent).getId();
 
                 //Calls when creating third event
-                exactly(1).of(event).spawn();
+                one(event).spawnChild(moduleName, componentName, 2, thirdNewPayload);
                 will(returnValue(thirdNewEvent));
-                exactly(1).of(thirdNewEvent).getPayloads();
-                exactly(1).of(thirdNewEvent).setPayload(thirdNewPayload);
+
                 exactly(1).of(thirdNewEvent).getId();
 
             }
         } );
-        List<Event> events = this.tokenSplitter.onEvent(event);
+        List<Event> events = this.tokenSplitter.onEvent(event,moduleName,componentName);
         Assert.assertTrue(events.size() == NUM_EVENTS_OUT);
         Assert.assertEquals(firstNewEvent, events.get(0));
         Assert.assertEquals(secondNewEvent, events.get(1));
@@ -266,20 +283,20 @@ public class TokenizingSplitterTest
                 will(returnValue(payloadContentStr.getBytes()));
 
                 //Calls when creating third payload
-                exactly(1).of(payload).spawn();
+                exactly(1).of(payload).spawnChild(0);
                 will(returnValue(firstNewPayload));
                 exactly(1).of(firstNewPayload).setContent(payloadContentStr.getBytes());
                 exactly(1).of(firstNewPayload).getId();
 
                 //Calls when creating first event
-                exactly(1).of(event).spawn();
+                exactly(1).of(event).spawnChild(moduleName, componentName, 0, firstNewPayload);
                 will(returnValue(firstNewEvent));
-                exactly(1).of(firstNewEvent).getPayloads();
-                exactly(1).of(firstNewEvent).setPayload(firstNewPayload);
+//                exactly(1).of(firstNewEvent).getPayloads();
+//                exactly(1).of(firstNewEvent).setPayload(firstNewPayload);
                 exactly(1).of(firstNewEvent).getId();
             } 
         } );
-        List<Event> events = this.tokenSplitter.onEvent(event);
+        List<Event> events = this.tokenSplitter.onEvent(event,moduleName,componentName);
         Assert.assertTrue(events.size() == NUM_EVENTS_OUT);
         Assert.assertEquals(firstNewEvent, events.get(0));
     }
@@ -333,166 +350,21 @@ public class TokenizingSplitterTest
                 will(returnValue(payloadContentStr.getBytes()));
 
                 //Calls when creating first event
-                exactly(1).of(event).spawn();
+                one(event).spawnChild(moduleName, componentName, 0, payload);
                 will(returnValue(firstNewEvent));
-                exactly(1).of(firstNewEvent).getPayloads();
-                exactly(1).of(firstNewEvent).setPayload(payload);
+//                exactly(1).of(firstNewEvent).getPayloads();
+//                exactly(1).of(firstNewEvent).setPayload(payload);
                 exactly(1).of(firstNewEvent).getId();
             } 
         } );
-        List<Event> events = this.tokenSplitter.onEvent(event);
+        List<Event> events = this.tokenSplitter.onEvent(event,moduleName,componentName);
         Assert.assertTrue(events.size() == NUM_EVENTS_OUT);
         Assert.assertEquals(firstNewEvent, events.get(0));
     }
 
-    /**
-     * Test unsuccessful event(1):payload(1) with payload content
-     * tokenized in to three giving event(3):payload(1).
-     * CloneNotSupportedException will be thrown when cloning first payload.
-     * @throws CloneNotSupportedException Thrown when cloning
-     *         <code>Payload</code>
-     */
-    @Test
-    public void test_unsuccessfulTokenisingPayloadCloningException()
-        throws CloneNotSupportedException
-    {
-        //Exception expected to be thrown by payload.spawn()
-        final CloneNotSupportedException payloadCloningException = new CloneNotSupportedException("Exception cloning payload.");
-        // create the class to be tested with
-        // delimiter (regular) expression and null encoding
-        this.tokenSplitter = new TokenizingSplitter("\\$");
 
-        /** real payload list */
-        this.payloads = new ArrayList<Payload>();
 
-        // Populate two payload entries
-        payloads.add(payload);
 
-        /** Real content - from the mocked payload */
-        final String payloadContentStr =
-            new String("A, you're adorable$"
-                     + "B, you're so beautiful$"
-                     + "C, you have some cutiful charms!");
-
-        classMockery.checking(new Expectations()
-        {
-            {
-                //Calls expected during logging
-                exactly(1).of(event).getId();
-                exactly(1).of(event).idToString();
-
-                //Calls expected on incoming event; will be called once only
-                exactly(1).of(event).getPayloads();
-                will(returnValue(payloads));
-
-                //Calls expected on event's payload; here the original event has only one payload
-                //and therefore these methods will be called once.
-                exactly(1).of(payload).getContent();
-                will(returnValue(payloadContentStr.getBytes()));
-
-                //Creating the first payload; will throw CloneNotSupportedException
-                exactly(1).of(payload).spawn();
-                will(throwException(payloadCloningException));
-            }
-        } );
-        try
-        {
-            @SuppressWarnings("unused")/** List of events is never returned as the exception is thrown. */
-            List<Event> events = this.tokenSplitter.onEvent(event);
-            Assert.fail();
-        }
-        catch(SequencerException e)
-        {
-            Assert.assertEquals(payloadCloningException, e.getCause());
-        }
-    }
-
-    /**
-     * Test unsuccessful event(1):payload(1) with payload content
-     * tokenized in to three giving event(3):payload(1).
-     * Clonfing the three events will be successful.
-     * CloneNotSupportedException will be thrown when cloning first event.
-     * @throws CloneNotSupportedException Thrown when cloning
-     *         <code>Event</code>
-     */
-    @Test
-    public void test_unsuccessfulTokenisingEventCloningException()
-        throws CloneNotSupportedException
-    {
-        //Exception expected to be thrown by event.spawn()
-        final CloneNotSupportedException eventClongingException = new CloneNotSupportedException("Exception cloning event.");
-        // Create the class to be tested with
-        // delimiter (regular) expression and null encoding
-        this.tokenSplitter = new TokenizingSplitter("\\$");
-        final int NUM_EVENTS_OUT = 3;
-        /** Real payload list */
-        this.payloads = new ArrayList<Payload>();
-        final Payload firstNewPayload = this.classMockery.mock(Payload.class);
-        final Payload secondNewPayload = this.classMockery.mock(Payload.class);
-        final Payload thirdNewPayload = this.classMockery.mock(Payload.class);
-
-        //Populate two payload entries
-        payloads.add(payload);
-
-        /** Real content - from the mocked payload */
-        final String payloadContentStr =
-            new String("A, you're adorable$"
-                     + "B, you're so beautiful$"
-                     + "C, you have some cutiful charms!");
-        /** Expected payload content after tokenizing. */
-        final String [] expectedSinglePayloadContent =
-                {"A, you're adorable",
-                 "B, you're so beautiful",
-                 "C, you have some cutiful charms!"};
-
-        classMockery.checking(new Expectations()
-        {
-            {
-                //Calls expected during logging.
-                exactly(1).of(event).getId();
-                exactly(1).of(event).idToString();
-                exactly(NUM_EVENTS_OUT).of(payload).getId();
-
-                //Calls expected on incoming event; will be called once only
-                exactly(1).of(event).getPayloads();
-                will(returnValue(payloads));
-                exactly(1).of(payload).getContent();
-                will(returnValue(payloadContentStr.getBytes()));
-
-                //Calls when creating first payload
-                exactly(1).of(payload).spawn();
-                will(returnValue(firstNewPayload));
-                exactly(1).of(firstNewPayload).setContent(expectedSinglePayloadContent[0].getBytes());
-                exactly(1).of(firstNewPayload).getId();
-
-                //Calls when creating second payload
-                exactly(1).of(payload).spawn();
-                will(returnValue(secondNewPayload));
-                exactly(1).of(secondNewPayload).setContent(expectedSinglePayloadContent[1].getBytes());
-                exactly(1).of(secondNewPayload).getId();
-
-                //Calls when creating third payload
-                exactly(1).of(payload).spawn();
-                will(returnValue(thirdNewPayload));
-                exactly(1).of(thirdNewPayload).setContent(expectedSinglePayloadContent[2].getBytes());
-                exactly(1).of(thirdNewPayload).getId();
-
-                //Creating the first event; will throw CloneNotSupportedException
-                exactly(1).of(event).spawn();
-                will(throwException(eventClongingException));
-            }
-        } );
-        try
-        {
-            @SuppressWarnings("unused")/** List of events is never returned as the exception is thrown. */
-            List<Event> events = this.tokenSplitter.onEvent(event);
-            Assert.fail();
-        }
-        catch(SequencerException e)
-        {
-            Assert.assertEquals(eventClongingException, e.getCause());
-        }
-    }
 
     /**
      * Teardown after each test

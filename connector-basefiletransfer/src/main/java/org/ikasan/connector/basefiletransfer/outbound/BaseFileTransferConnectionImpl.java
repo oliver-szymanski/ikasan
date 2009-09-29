@@ -4,24 +4,38 @@
  * 
  * ====================================================================
  * Ikasan Enterprise Integration Platform
- * Copyright (c) 2003-2008 Mizuho International plc. and individual contributors as indicated
- * by the @authors tag. See the copyright.txt in the distribution for a
- * full listing of individual contributors.
+ * 
+ * Distributed under the Modified BSD License.
+ * Copyright notice: The copyright for this software and a full listing 
+ * of individual contributors are as shown in the packaged copyright.txt 
+ * file. 
+ * 
+ * All rights reserved.
  *
- * This is free software; you can redistribute it and/or modify it
- * under the terms of the GNU Lesser General Public License as
- * published by the Free Software Foundation; either version 2.1 of
- * the License, or (at your option) any later version.
+ * Redistribution and use in source and binary forms, with or without 
+ * modification, are permitted provided that the following conditions are met:
  *
- * This software is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
- * Lesser General Public License for more details.
+ *  - Redistributions of source code must retain the above copyright notice, 
+ *    this list of conditions and the following disclaimer.
  *
- * You should have received a copy of the GNU Lesser General Public
- * License along with this software; if not, write to the 
- * Free Software Foundation Europe e.V. Talstrasse 110, 40217 Dusseldorf, Germany 
- * or see the FSF site: http://www.fsfeurope.org/.
+ *  - Redistributions in binary form must reproduce the above copyright notice, 
+ *    this list of conditions and the following disclaimer in the documentation 
+ *    and/or other materials provided with the distribution.
+ *
+ *  - Neither the name of the ORGANIZATION nor the names of its contributors may
+ *    be used to endorse or promote products derived from this software without 
+ *    specific prior written permission.
+ *
+ * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" 
+ * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE 
+ * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE 
+ * DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE 
+ * FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL 
+ * DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR 
+ * SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER 
+ * CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY,
+ * OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE 
+ * USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  * ====================================================================
  */
 package org.ikasan.connector.basefiletransfer.outbound;
@@ -31,15 +45,19 @@ import java.io.InputStream;
 import javax.resource.ResourceException;
 import javax.resource.spi.ManagedConnection;
 
-import org.ikasan.connector.base.outbound.EISConnectionImpl;
-
+import org.ikasan.common.FilePayloadAttributeNames;
+import org.ikasan.common.Payload;
+import org.ikasan.common.factory.PayloadFactory;
+import org.ikasan.common.factory.PayloadFactoryImpl;
 import org.ikasan.connector.base.command.ExecutionContext;
 import org.ikasan.connector.base.command.ExecutionOutput;
 import org.ikasan.connector.base.command.TransactionalResourceCommand;
+import org.ikasan.connector.base.outbound.EISConnectionImpl;
 import org.ikasan.connector.basefiletransfer.outbound.command.DeliverBatchCommand;
 import org.ikasan.connector.basefiletransfer.outbound.command.DeliverFileCommand;
 import org.ikasan.connector.basefiletransfer.outbound.command.util.UnzipNotSupportedException;
 import org.ikasan.connector.basefiletransfer.outbound.command.util.UnzippingFileProvider;
+import org.ikasan.connector.util.chunking.model.FileChunkHeader;
 
 /**
  * A Base implementation for File transfer connections
@@ -47,6 +65,11 @@ import org.ikasan.connector.basefiletransfer.outbound.command.util.UnzippingFile
  */
 public abstract class BaseFileTransferConnectionImpl extends EISConnectionImpl
 {
+	
+	protected static final String REFERENCE_PAYLOAD_ATTRIBUTE = "referencePayload";
+	
+	private PayloadFactory payloadFactory = new PayloadFactoryImpl();
+	
     /**
      * Constructor which takes ManagedConnection as a parameter
      * 
@@ -109,4 +132,48 @@ public abstract class BaseFileTransferConnectionImpl extends EISConnectionImpl
      */
     protected abstract ExecutionOutput executeCommand(TransactionalResourceCommand deliveryCommand,
             ExecutionContext executionContext) throws ResourceException;
+    
+    /**
+     * Method used to map an <code>FTPMappedRecord</code> object to a
+     * <code>Payload</code> object.
+     * 
+     * TODO Is there any other Payload stuff to set here?
+     * 
+     * @param header The record as returned from the FileTransferProtocolClient
+     * @return A payload constructed from the record.
+     */
+    protected  Payload fileChunkHeaderToPayload(FileChunkHeader header)
+    {    	
+    	String paylaodId = ""+header.getFileName().hashCode();
+
+    	Payload payload = payloadFactory.newPayload(paylaodId,  header.toXml().getBytes());
+        
+        payload.setAttribute(REFERENCE_PAYLOAD_ATTRIBUTE, Boolean.TRUE.toString());
+        payload.setAttribute(FilePayloadAttributeNames.FILE_NAME, header.getFileName());
+
+        
+
+//        // need to do checksumming
+//        payload.setChecksum(header.getInternalMd5Hash());
+//        payload.setChecksumAlg(Md5ChecksumSupplier.MD5);
+        return payload;
+    }
+    
+    /**
+     * Determines if we need to handle this as a chunk reference
+     * 
+     * @param payload - The payload to check
+     * @return true if the payload is simply a reference to a set of chunks
+     */
+    protected boolean isChunkReference(Payload payload)
+    {
+        boolean result = false;
+        String referencePayloadAttribute = payload.getAttribute(REFERENCE_PAYLOAD_ATTRIBUTE);
+        
+        if(referencePayloadAttribute != null && referencePayloadAttribute.equals(Boolean.TRUE.toString()))
+        {
+            result = true;
+        }
+        return result;
+    }
 }

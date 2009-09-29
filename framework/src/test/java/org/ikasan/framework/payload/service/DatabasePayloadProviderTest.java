@@ -4,24 +4,38 @@
  *
  * ====================================================================
  * Ikasan Enterprise Integration Platform
- * Copyright (c) 2003-2008 Mizuho International plc. and individual contributors as indicated
- * by the @authors tag. See the copyright.txt in the distribution for a
- * full listing of individual contributors.
+ * 
+ * Distributed under the Modified BSD License.
+ * Copyright notice: The copyright for this software and a full listing 
+ * of individual contributors are as shown in the packaged copyright.txt 
+ * file. 
+ * 
+ * All rights reserved.
  *
- * This is free software; you can redistribute it and/or modify it
- * under the terms of the GNU Lesser General Public License as
- * published by the Free Software Foundation; either version 2.1 of
- * the License, or (at your option) any later version.
+ * Redistribution and use in source and binary forms, with or without 
+ * modification, are permitted provided that the following conditions are met:
  *
- * This software is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
- * Lesser General Public License for more details.
+ *  - Redistributions of source code must retain the above copyright notice, 
+ *    this list of conditions and the following disclaimer.
  *
- * You should have received a copy of the GNU Lesser General Public
- * License along with this software; if not, write to the 
- * Free Software Foundation Europe e.V. Talstrasse 110, 40217 Dusseldorf, Germany 
- * or see the FSF site: http://www.fsfeurope.org/.
+ *  - Redistributions in binary form must reproduce the above copyright notice, 
+ *    this list of conditions and the following disclaimer in the documentation 
+ *    and/or other materials provided with the distribution.
+ *
+ *  - Neither the name of the ORGANIZATION nor the names of its contributors may
+ *    be used to endorse or promote products derived from this software without 
+ *    specific prior written permission.
+ *
+ * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" 
+ * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE 
+ * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE 
+ * DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE 
+ * FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL 
+ * DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR 
+ * SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER 
+ * CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY,
+ * OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE 
+ * USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  * ====================================================================
  */
 package org.ikasan.framework.payload.service;
@@ -33,12 +47,12 @@ import java.util.List;
 import junit.framework.TestCase;
 
 import org.ikasan.common.Payload;
-import org.ikasan.common.component.Spec;
 import org.ikasan.common.factory.PayloadFactory;
 import org.ikasan.framework.payload.dao.DatabasePayloadDao;
 import org.ikasan.framework.payload.model.DatabasePayload;
 import org.jmock.Expectations;
 import org.jmock.Mockery;
+import org.jmock.lib.legacy.ClassImposteriser;
 
 /**
  * JUnit test class for Database payload provider
@@ -46,6 +60,14 @@ import org.jmock.Mockery;
  */
 public class DatabasePayloadProviderTest extends TestCase
 {
+	
+	private Mockery mockery = new Mockery()
+    {
+        {
+            setImposteriser(ClassImposteriser.INSTANCE);
+        }
+    };
+    
     /**
      * Test invalid constructor
      */
@@ -53,7 +75,7 @@ public class DatabasePayloadProviderTest extends TestCase
     {
         try
         {
-            new DatabasePayloadProvider(null, null, null, false, null, null);
+            new DatabasePayloadProvider(null, null, null, false);
         }
         catch (Exception e)
         {
@@ -68,7 +90,6 @@ public class DatabasePayloadProviderTest extends TestCase
      */
     public void testConstructor_acceptsValidArguments()
     {
-        Mockery mockery = new Mockery();
         DatabaseHousekeeper databaseEventHouseKeepingMatcher = mockery
             .mock(DatabaseHousekeeper.class);
         final PayloadFactory payloadFactory = mockery
@@ -77,17 +98,13 @@ public class DatabasePayloadProviderTest extends TestCase
         .mock(DatabasePayloadDao.class);
 
         boolean destructiveRead = false;
-        final Spec payloadSpec = Spec.TEXT_PLAIN;
-        final String payloadSrcSystem = "testSrcSystem";
         
         // housekeeping but not destructive read
         new DatabasePayloadProvider(databaseEventDao, payloadFactory,
-            databaseEventHouseKeepingMatcher, destructiveRead,
-            payloadSpec, payloadSrcSystem);
+            databaseEventHouseKeepingMatcher, destructiveRead);
         // not housekeeping but destructive read
         destructiveRead = true;
-        new DatabasePayloadProvider(databaseEventDao, payloadFactory, null, destructiveRead,
-                payloadSpec, payloadSrcSystem);
+        new DatabasePayloadProvider(databaseEventDao, payloadFactory, null, destructiveRead);
     }
 
     /**
@@ -95,7 +112,6 @@ public class DatabasePayloadProviderTest extends TestCase
      */
     public void testConstructor_enforcesHousekeepingAndDestructiveReadMutuallyExclusive()
     {
-        Mockery mockery = new Mockery();
         DatabaseHousekeeper databaseEventHouseKeepingMatcher = mockery
             .mock(DatabaseHousekeeper.class);
         final PayloadFactory payloadFactory = mockery
@@ -103,14 +119,11 @@ public class DatabasePayloadProviderTest extends TestCase
         final DatabasePayloadDao databaseEventDao = mockery
         .mock(DatabasePayloadDao.class);
 
-        final Spec payloadSpec = Spec.TEXT_PLAIN;
-        final String payloadSrcSystem = "testSrcSystem";
         try
         {
             boolean destructiveRead = true;
             new DatabasePayloadProvider(databaseEventDao, payloadFactory,
-                databaseEventHouseKeepingMatcher, destructiveRead,
-                payloadSpec, payloadSrcSystem);
+                databaseEventHouseKeepingMatcher, destructiveRead);
             fail("Exception should have been thrown by constructor as housekeeping and destructive reading are mutuallly exclusive");
         }
         catch (Exception e)
@@ -126,7 +139,6 @@ public class DatabasePayloadProviderTest extends TestCase
      */
     public void testGetNextRelatedPayloads_housekeepingConfiguredCallsHousekeeping()
     {
-        Mockery mockery = new Mockery();
         final DatabaseHousekeeper housekeeper = mockery
             .mock(DatabaseHousekeeper.class);
         final DatabasePayloadDao databaseEventDao = mockery
@@ -134,8 +146,7 @@ public class DatabasePayloadProviderTest extends TestCase
 
         final PayloadFactory payloadFactory = mockery
             .mock(PayloadFactory.class);
-        final Spec payloadSpec = Spec.TEXT_PLAIN;
-        final String payloadSrcSystem = "testSrcSystem";
+
         mockery.checking(new Expectations()
         {
             {
@@ -151,7 +162,7 @@ public class DatabasePayloadProviderTest extends TestCase
         // housekeeping but not destructive read
         DatabasePayloadProvider databaseEventProvider = new DatabasePayloadProvider(
             databaseEventDao, payloadFactory, housekeeper,
-            destructiveRead, payloadSpec, payloadSrcSystem);
+            destructiveRead);
 
         databaseEventProvider.getNextRelatedPayloads();
     }
@@ -161,17 +172,18 @@ public class DatabasePayloadProviderTest extends TestCase
      */
     public void testGetNextRelatedPayloads_discoversDatabaseEventNonDestructiveRead()
     {
-        Mockery mockery = new Mockery();
+
         final DatabasePayloadDao databaseEventDao = mockery
             .mock(DatabasePayloadDao.class);
         final PayloadFactory payloadFactory = mockery
             .mock(PayloadFactory.class);
         final String payloadContent = "blah";
-        final DatabasePayload unconsumedEvent = new DatabasePayload(
-            payloadContent, new Date());
-        final Spec payloadSpec = Spec.TEXT_PLAIN;
-        final String payloadSrcSystem = "testSrcSystem";
+//        final DatabasePayload unconsumedEvent = new DatabasePayload(
+//            payloadContent, new Date());
+        final DatabasePayload unconsumedEvent = mockery.mock(DatabasePayload.class);
+
         final List<DatabasePayload> unconsumedEvents = new ArrayList<DatabasePayload>();
+        final Long databasePayloadId = 1l;
         unconsumedEvents.add(unconsumedEvent);
         mockery.checking(new Expectations()
         {
@@ -179,8 +191,14 @@ public class DatabasePayloadProviderTest extends TestCase
                 // a new event to consume
                 one(databaseEventDao).findUnconsumed();
                 will(returnValue(unconsumedEvents));
-                one(payloadFactory).newPayload(payloadSpec,
-                        payloadSrcSystem, payloadContent.getBytes());
+                allowing(unconsumedEvent).getId();will(returnValue(databasePayloadId));
+                one(unconsumedEvent).getEvent();will(returnValue(payloadContent));
+                
+                one(payloadFactory).newPayload("1", payloadContent.getBytes());
+                
+                //set it as consumed and save it
+                one(unconsumedEvent).setConsumed(true);
+                one(unconsumedEvent).setLastUpdated(with(any(Date.class)));
                 one(databaseEventDao).save(unconsumedEvent);
             }
         });
@@ -188,7 +206,7 @@ public class DatabasePayloadProviderTest extends TestCase
         // housekeeping but not destructive read
         DatabasePayloadProvider databaseEventProvider = new DatabasePayloadProvider(
             databaseEventDao, payloadFactory, null,
-            destructiveRead, payloadSpec, payloadSrcSystem);
+            destructiveRead);
         List<Payload> nextRelatedPayloads = databaseEventProvider
             .getNextRelatedPayloads();
         assertEquals("should have returned a list of 1 related Payload", 1,
@@ -200,17 +218,19 @@ public class DatabasePayloadProviderTest extends TestCase
      */
     public void testGetNextRelatedPayloads_discoversDatabaseEventDestructiveRead()
     {
-        Mockery mockery = new Mockery();
         final DatabasePayloadDao databaseEventDao = mockery
             .mock(DatabasePayloadDao.class);
         final PayloadFactory payloadFactory = mockery
             .mock(PayloadFactory.class);
         final String payloadContent = "blah";
-        final DatabasePayload unconsumedEvent = new DatabasePayload(
-            payloadContent, new Date());
-        final Spec payloadSpec = Spec.TEXT_PLAIN;
-        final String payloadSrcSystem = "testSrcSystem";
+//        final DatabasePayload unconsumedEvent = new DatabasePayload(
+//            payloadContent, new Date());
+        final DatabasePayload unconsumedEvent = mockery.mock(DatabasePayload.class);
+
         final List<DatabasePayload> unconsumedEvents = new ArrayList<DatabasePayload>();
+        final Long databasePayloadId = 1l;
+        
+        
         unconsumedEvents.add(unconsumedEvent);
         mockery.checking(new Expectations()
         {
@@ -218,16 +238,21 @@ public class DatabasePayloadProviderTest extends TestCase
                 // a new event to consume
                 one(databaseEventDao).findUnconsumed();
                 will(returnValue(unconsumedEvents));
-                one(payloadFactory).newPayload(payloadSpec,
-                        payloadSrcSystem, payloadContent.getBytes());
+                allowing(unconsumedEvent).getId();will(returnValue(databasePayloadId));
+                one(unconsumedEvent).getEvent();will(returnValue(payloadContent));
+                
+                
+                one(payloadFactory).newPayload("1", payloadContent.getBytes());
+                
+                one(unconsumedEvent).setConsumed(true);
+                one(unconsumedEvent).setLastUpdated(with(any(Date.class)));
                 one(databaseEventDao).delete(unconsumedEvent);
             }
         });
         boolean destructiveRead = true;
         // housekeeping but not destructive read
         DatabasePayloadProvider databaseEventProvider = new DatabasePayloadProvider(
-            databaseEventDao, payloadFactory, null, destructiveRead,
-            payloadSpec, payloadSrcSystem);
+            databaseEventDao, payloadFactory, null, destructiveRead);
         List<Payload> nextRelatedPayloads = databaseEventProvider
             .getNextRelatedPayloads();
         assertEquals("should have returned a list of 1 related Payload", 1,

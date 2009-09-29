@@ -4,30 +4,45 @@
  *
  * ====================================================================
  * Ikasan Enterprise Integration Platform
- * Copyright (c) 2003-2008 Mizuho International plc. and individual contributors as indicated
- * by the @authors tag. See the copyright.txt in the distribution for a
- * full listing of individual contributors.
+ * 
+ * Distributed under the Modified BSD License.
+ * Copyright notice: The copyright for this software and a full listing 
+ * of individual contributors are as shown in the packaged copyright.txt 
+ * file. 
+ * 
+ * All rights reserved.
  *
- * This is free software; you can redistribute it and/or modify it
- * under the terms of the GNU Lesser General Public License as
- * published by the Free Software Foundation; either version 2.1 of
- * the License, or (at your option) any later version.
+ * Redistribution and use in source and binary forms, with or without 
+ * modification, are permitted provided that the following conditions are met:
  *
- * This software is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
- * Lesser General Public License for more details.
+ *  - Redistributions of source code must retain the above copyright notice, 
+ *    this list of conditions and the following disclaimer.
  *
- * You should have received a copy of the GNU Lesser General Public
- * License along with this software; if not, write to the
- * Free Software Foundation Europe e.V. Talstrasse 110, 40217 Dusseldorf, Germany
- * or see the FSF site: http://www.fsfeurope.org/.
+ *  - Redistributions in binary form must reproduce the above copyright notice, 
+ *    this list of conditions and the following disclaimer in the documentation 
+ *    and/or other materials provided with the distribution.
+ *
+ *  - Neither the name of the ORGANIZATION nor the names of its contributors may
+ *    be used to endorse or promote products derived from this software without 
+ *    specific prior written permission.
+ *
+ * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" 
+ * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE 
+ * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE 
+ * DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE 
+ * FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL 
+ * DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR 
+ * SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER 
+ * CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY,
+ * OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE 
+ * USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  * ====================================================================
  */
 package org.ikasan.framework.exception.user;
 
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -41,8 +56,8 @@ import org.apache.log4j.Logger;
 import org.ikasan.common.CommonXSLTransformer;
 import org.ikasan.common.Payload;
 import org.ikasan.common.component.PayloadConverter;
-import org.ikasan.common.component.Spec;
 import org.ikasan.common.factory.PayloadFactory;
+import org.ikasan.framework.component.Event;
 import org.ikasan.framework.exception.ExceptionContext;
 import org.ikasan.framework.exception.ResubmissionInfo;
 import org.xml.sax.SAXException;
@@ -170,12 +185,13 @@ public class ExceptionTransformerImpl implements ExceptionTransformer
             params.put("resubmissionInfo", resubmissionInfo);
         }
         // Event sourced data depends on whether we have an event
-        if (exceptionContext.getEvent() != null)
+        Event event = exceptionContext.getEvent();
+        if (event != null)
         {
-            params.put("timestamp", exceptionContext.getEvent().getFormattedTimestamp());
-            params.put("timezone", exceptionContext.getEvent().getTimezone());
-            params.put("originalEvent", getOriginalEvent(xstream, exceptionContext.getEvent().getOriginalPayloads(),
-                externalExceptionDef));
+        	
+            params.put("timestamp", new Date(event.getTimestamp()).toString());
+            params.put("timezone", "UTC");
+            params.put("originalEvent", null);
             params.put("exceptionEvent", getExceptionEvent(xstream, exceptionContext.getEvent().getPayloads(),
                 externalExceptionDef));
         }
@@ -200,33 +216,7 @@ public class ExceptionTransformerImpl implements ExceptionTransformer
         return xmlFragment;
     }
 
-    /**
-     * Returns the payloads as a String originalEvent
-     * 
-     * @param xstream XStream of the event 
-     * @param originalPayloads The list of original payloads
-     * @param externalExceptionDef The external exception definition
-     * @return The original event
-     */
-    private String getOriginalEvent(XStream xstream, List<Payload> originalPayloads,
-            ExternalExceptionDefinition externalExceptionDef)
-    {
-        logger.info("Creating originalEvent XML...");
-        // TODO - don't think we should touch originals, but this was
-        // in the original code base.
-        if (externalExceptionDef.getMaxPayloadSize().intValue() > 0)
-        {
-            managePayloadSize(originalPayloads, externalExceptionDef);
-        }
-        xstream.registerConverter(payloadConverter, 0);
-        xstream.alias("payload", payloadClass);
-        xstream.alias("originalEvent", List.class);
-        // Base64Encoding of payloads
-        base64EncodePayloads(originalPayloads);
-        String xmlFragment = xstream.toXML(originalPayloads);
-        logger.info("Completed creation of originalEvent XML.");
-        return xmlFragment;
-    }
+    
 
     /**
      * Returns the payloads as a String exceptionEvent
@@ -247,37 +237,13 @@ public class ExceptionTransformerImpl implements ExceptionTransformer
         xstream.registerConverter(payloadConverter, 0);
         xstream.alias("payload", payloadClass);
         xstream.alias("exceptionEvent", List.class);
-        // Base64Encoding of payloads
-        base64EncodePayloads(payloads);
+
         String xmlFragment = xstream.toXML(payloads);
         logger.info("Completed creation of exceptionEvent XML.");
         return xmlFragment;
     }
 
-    /**
-     * Utility method for iterating over a payload list and Base64encoding.
-     * 
-     * TODO - This should be moved to Payload class.
-     * 
-     * @param payloads List of payloads to base64 encode
-     */
-    private static void base64EncodePayloads(List<Payload> payloads)
-    {
-        // Encode binary payloads
-        for (Payload payload : payloads)
-        {
-            if (payload.getSpec().equals(Spec.BYTE_JAR.toString())
-                    || payload.getSpec().equals(Spec.BYTE_ZIP.toString())
-                    || payload.getSpec().equals(Spec.BYTE_PLAIN.toString()))
-            {
-                payload.base64EncodePayload();
-            }
-            else
-            {
-                logger.debug("Text payload returned without encoding."); //$NON-NLS-1$
-            }
-        }
-    }
+   
 
     /**
      * Utility method for calculating payload sizes to see if they require truncation.
