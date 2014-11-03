@@ -38,21 +38,18 @@
  * USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  * ====================================================================
  */
-package org.ikasan.component.endpoint.ftp.common;
+package org.ikasan.component.endpoint.common;
 
 /**
  * @author Ikasan Development Team
  */
-public class ClientCommandGetException extends RuntimeException
+public class ClientCommandCdException extends RuntimeException
 {
-    
-    /** GUID */
+    /** Logger */
     private static final long serialVersionUID = 1L;
 
-    /**
-     * Default constructor
-     */
-    public ClientCommandGetException()
+    /** Constructor */
+    public ClientCommandCdException()
     {
         // Do Nothing
     }
@@ -61,7 +58,7 @@ public class ClientCommandGetException extends RuntimeException
      * @param message
      * @param cause
      */
-    public ClientCommandGetException(String message, Throwable cause)
+    public ClientCommandCdException(String message, Throwable cause)
     {
         super(message, cause);
     }
@@ -69,7 +66,7 @@ public class ClientCommandGetException extends RuntimeException
     /**
      * @param message
      */
-    public ClientCommandGetException(String message)
+    public ClientCommandCdException(String message)
     {
         super(message);
     }
@@ -77,7 +74,7 @@ public class ClientCommandGetException extends RuntimeException
     /**
      * @param cause
      */
-    public ClientCommandGetException(Throwable cause)
+    public ClientCommandCdException(Throwable cause)
     {
         super(cause);
     }

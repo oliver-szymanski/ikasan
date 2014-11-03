@@ -38,17 +38,45 @@
  * USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  * ====================================================================
  */
-package org.ikasan.component.endpoint.ftp.common;
+package org.ikasan.component.endpoint.common;
 
 /**
  * @author Ikasan Development Team 
  */
-public interface ClientFilenameFormatter
+public class ClientCommandMkdirException extends RuntimeException
 {
+    /** GUID */
+    private static final long serialVersionUID = 1L;
+
+    /** Default Constructor */
+    public ClientCommandMkdirException()
+    {
+        // Do Nothing
+    }
+
     /**
-     * translate the file name
-     * @param filename
-     * @return translated filename
+     * @param message
+     * @param cause
      */
-    public String translateFilename(String filename);
+    public ClientCommandMkdirException(String message, Throwable cause)
+    {
+        super(message, cause);
+    }
+
+    /**
+     * @param message
+     */
+    public ClientCommandMkdirException(String message)
+    {
+        super(message);
+    }
+
+    /**
+     * @param cause
+     */
+    public ClientCommandMkdirException(Throwable cause)
+    {
+        super(cause);
+    }
+
 }

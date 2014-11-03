@@ -41,10 +41,9 @@
 package org.ikasan.component.endpoint.ftp.endpoint;
 
 import org.apache.log4j.Logger;
-import org.ikasan.component.endpoint.ftp.common.*;
-import org.ikasan.component.endpoint.ftp.consumer.FtpConsumerConfiguration;
+import org.ikasan.component.endpoint.common.*;
+import org.ikasan.component.endpoint.persistence.dao.BaseFileTransferDao;
 
-import java.io.InputStream;
 import java.net.URISyntaxException;
 import java.util.ArrayList;
 import java.util.Date;
@@ -67,6 +66,9 @@ public class FtpEndpointImpl implements FtpEndpoint {
      */
     private FileTransferClient ftpClient;
 
+    /** dao class for base file transfer classes */
+    private BaseFileTransferDao persistence;
+
     /**
      * client Id used by this ftp endpoint
      */
@@ -76,10 +78,7 @@ public class FtpEndpointImpl implements FtpEndpoint {
      * source directory
      */
     private String sourceDirectory;
-//
-//    /** dao class for base file transfer classes */
-//    private BaseFileTransferDao persistence;
-//
+
     /**
      * regexp for pattern matching filenames
      */
@@ -105,7 +104,7 @@ public class FtpEndpointImpl implements FtpEndpoint {
      */
     private boolean filterOnLastModifiedDate;
 
-    public FtpEndpointImpl(FileTransferClient ftpClient, String clientID, String sourceDirectory, String filenamePattern, long minAge, boolean filterDuplicates, boolean filterOnFilename, boolean filterOnLastModifiedDate) {
+    public FtpEndpointImpl(FileTransferClient ftpClient, BaseFileTransferDao persistence, String clientID, String sourceDirectory, String filenamePattern, long minAge, boolean filterDuplicates, boolean filterOnFilename, boolean filterOnLastModifiedDate) {
         this.ftpClient = ftpClient;
         this.clientID = clientID;
         this.sourceDirectory = sourceDirectory;
@@ -114,6 +113,7 @@ public class FtpEndpointImpl implements FtpEndpoint {
         this.filterDuplicates = filterDuplicates;
         this.filterOnFilename = filterOnFilename;
         this.filterOnLastModifiedDate = filterOnLastModifiedDate;
+        this.persistence = persistence;
     }
 
     /**
@@ -130,12 +130,17 @@ public class FtpEndpointImpl implements FtpEndpoint {
             // We change the path to be file based as opposed to URI based,
             // means that root starts as '/' as opposed to '//' which
             // some FTP servers don't like
-            BaseFileTransferMappedRecord record = ftpClient.get(entries.get(0));
+            if(entries !=null && !entries.isEmpty()) {
+                BaseFileTransferMappedRecord record = ftpClient.get(entries.get(0));
 
-            return record;
+                return record;
+            } else {
+                return null;
+            }
+
         }catch(ClientCommandCdException cdException) {
             throw new FtpEndpointException("Unable to change directory on ftp server: "+ cdException.getMessage(),cdException); //$NON-NLS-1$
-        }catch (ClientCommandLsException  lsException){
+        }catch (ClientCommandLsException lsException){
             throw new FtpEndpointException("Unable to get list of files from ftp server: "+ lsException.getMessage(),lsException);
         }
         catch(URISyntaxException uriSyntaxException){
@@ -166,11 +171,10 @@ public class FtpEndpointImpl implements FtpEndpoint {
 
         // Filter the files
         logger.debug("Filtering entries based on default filter list..."); //$NON-NLS-1$
-        List<ClientListEntry> filteredFiles = allFiles;
-        filterDefaults(allFiles);
+        List<ClientListEntry> filteredFiles = filterDefaults(allFiles);
 
         // Process filtered files
-        if (filteredFiles.size() > 0) {
+        if (filteredFiles!=null && filteredFiles.size() > 0) {
             for (ClientListEntry entry : filteredFiles) {
                 entry.setClientId(clientID);
 
@@ -192,10 +196,10 @@ public class FtpEndpointImpl implements FtpEndpoint {
 
                 // Filter out duplicates based on parameters passed in earlier
                 if (filterDuplicates && filterOptionsSet()) {
-//                    if (!persistence.isDuplicate(entry, configuration.getFilterOnFilename(), configuration.getFilterOnLastModifiedDate()))
-//                    {
+                    if (!persistence.isDuplicate(entry, filterOnFilename, filterOnLastModifiedDate))
+                    {
                         result.add(entry);
-//                    }
+                    }
                 } else {
                     result.add(entry);
                 }

@@ -41,11 +41,8 @@
 package org.ikasan.component.endpoint.ftp.endpoint;
 
 
-import org.ikasan.component.endpoint.ftp.common.ClientListEntry;
-import org.jmock.Expectations;
-import org.jmock.Mockery;
+import org.ikasan.component.endpoint.common.ClientListEntry;
 
-import javax.transaction.xa.Xid;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.util.Date;

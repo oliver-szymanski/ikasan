@@ -42,8 +42,10 @@ package org.ikasan.component.endpoint.ftp.endpoint;
 
 
 import static org.junit.Assert.*;
-import org.ikasan.component.endpoint.ftp.common.*;
+
+import org.ikasan.component.endpoint.common.*;
 import org.ikasan.component.endpoint.ftp.consumer.FtpConsumerConfiguration;
+import org.ikasan.component.endpoint.persistence.dao.BaseFileTransferDao;
 import org.jmock.Expectations;
 import org.jmock.Mockery;
 import org.jmock.lib.legacy.ClassImposteriser;
@@ -75,61 +77,360 @@ public class FtpEndpointImplTest {
 
     final FileTransferClient mockFileTransferClient = mockery.mock(FileTransferClient.class);
 
+    final BaseFileTransferDao mockBaseFileTransferDao = mockery.mock(BaseFileTransferDao.class);
+
     final String clientID = "testClientId";
 
     final String sourceDir = "srcDir";
 
     final String filenamePattern = "[a-z].txt";
 
+    final String filename = "a.txt";
+
     final long minAge = 120;
 
 
     /**
-     *  Ftp Endpoint class under test.
+     * Ftp Endpoint class under test.
      */
     private FtpEndpoint uut;
 
 
     @Test
-    public void testExecute() throws
+    public void getFile_when_empty_list_list_of_files_returned_by_ftp_client() throws
             ClientCommandCdException, ClientCommandLsException,
-            URISyntaxException
-    {
+            URISyntaxException {
 
-        // mock the mockFileTransfertClient
+        // setuo
         final List<ClientListEntry> fileList = new ArrayList<ClientListEntry>();
-//        final ClientListEntry fileToIgnore = BaseFileTransferCommandJUnitHelper.createEntry("blah");
-//        fileList.add(fileToIgnore);
-//        final ClientListEntry youngFileToIgnore = BaseFileTransferCommandJUnitHelper.createEntry("b.txt", new Date());
-//        fileList.add(youngFileToIgnore);
-        final ClientListEntry fileToDiscover = BaseFileTransferCommandJUnitHelper.createEntry("a.txt");
+
+        mockery.checking(new Expectations() {
+            {
+                exactly(1).of(mockFileTransferClient).ensureConnection();
+                exactly(1).of(mockFileTransferClient).ls(sourceDir);
+                will(returnValue(fileList));
+
+            }
+        });
+
+        uut = new FtpEndpointImpl(mockFileTransferClient, mockBaseFileTransferDao, clientID, sourceDir,
+                filenamePattern, minAge, false, false, false);
+
+        // test
+        BaseFileTransferMappedRecord result = uut.getFile();
+
+        // assert
+        assertNull("Get file returned not a null value", result);
+        mockery.assertIsSatisfied();
+    }
+
+    @Test
+    public void getFile_when_null_is_returned_by_ftp_client() throws
+            ClientCommandCdException, ClientCommandLsException,
+            URISyntaxException {
+
+        // setup
+        mockery.checking(new Expectations() {
+            {
+                exactly(1).of(mockFileTransferClient).ensureConnection();
+                exactly(1).of(mockFileTransferClient).ls(sourceDir);
+                will(returnValue(null));
+
+            }
+        });
+
+        uut = new FtpEndpointImpl(mockFileTransferClient, mockBaseFileTransferDao, clientID, sourceDir,
+                filenamePattern, minAge, false, false, false);
+
+        // test
+        BaseFileTransferMappedRecord result = uut.getFile();
+
+        // assert
+        assertNull("Get file returned not a null value", result);
+        mockery.assertIsSatisfied();
+    }
+
+
+    @Test
+    public void getFile_when_single_file_is_returned_by_ftp_client() throws
+            ClientCommandCdException, ClientCommandLsException,
+            URISyntaxException {
+
+        // setup
+        final List<ClientListEntry> fileList = new ArrayList<ClientListEntry>();
+        final ClientListEntry fileToDiscover = BaseFileTransferCommandJUnitHelper.createEntry(filename);
         fileList.add(fileToDiscover);
 
         final BaseFileTransferMappedRecord record = new BaseFileTransferMappedRecord();
 
-        mockery.checking(new Expectations()
-        {
+        mockery.checking(new Expectations() {
             {
                 exactly(1).of(mockFileTransferClient).ensureConnection();
-                exactly(1).of(mockFileTransferClient).cd(sourceDir);
                 exactly(1).of(mockFileTransferClient).ls(sourceDir);
                 will(returnValue(fileList));
                 exactly(1).of(mockFileTransferClient).get(fileToDiscover);
                 will(returnValue(record));
 
+            }
+        });
+
+        uut = new FtpEndpointImpl(mockFileTransferClient, mockBaseFileTransferDao, clientID, sourceDir,
+                filenamePattern, minAge, false, false, false);
+
+        // test
+        BaseFileTransferMappedRecord result = uut.getFile();
+
+        // assert
+        assertEquals(record, result);
+        mockery.assertIsSatisfied();
+    }
+
+
+    @Test
+    public void getFile_when_single_file_is_returned_by_ftp_client_and_file_does_not_match_pattern() throws
+            ClientCommandCdException, ClientCommandLsException,
+            URISyntaxException {
+
+        // setup
+        String unmatchedFileName = "a.csv";
+        final List<ClientListEntry> fileList = new ArrayList<ClientListEntry>();
+        final ClientListEntry fileToDiscover = BaseFileTransferCommandJUnitHelper.createEntry(unmatchedFileName);
+        fileList.add(fileToDiscover);
+
+        mockery.checking(new Expectations() {
+            {
+                exactly(1).of(mockFileTransferClient).ensureConnection();
+                exactly(1).of(mockFileTransferClient).ls(sourceDir);
+                will(returnValue(fileList));
 
             }
         });
 
+        uut = new FtpEndpointImpl(mockFileTransferClient, mockBaseFileTransferDao, clientID, sourceDir,
+                filenamePattern, minAge, false, false, false);
 
-        uut =  new FtpEndpointImpl(mockFileTransferClient,clientID,sourceDir,
-                filenamePattern,  minAge, true, true, true);
+        // test
+        BaseFileTransferMappedRecord result = uut.getFile();
 
-
-        BaseFileTransferMappedRecord output = uut.getFile();
-
-        assertEquals(
-                "command result's only entry should be the file that matches pattern", //$NON-NLS-1$
-                record, output);
+        // assert
+        assertNull("Returned file name did not match the pattern" + filenamePattern + " : ", result);
+        mockery.assertIsSatisfied();
     }
+
+    @Test
+    public void getFile_when_single_file_is_returned_by_ftp_client_and_file_is_just_created() throws
+            ClientCommandCdException, ClientCommandLsException,
+            URISyntaxException {
+
+        // setup
+        final List<ClientListEntry> fileList = new ArrayList<ClientListEntry>();
+        Date now = new Date();
+
+        final ClientListEntry fileToDiscover = BaseFileTransferCommandJUnitHelper.createEntry(filename, now);
+        fileList.add(fileToDiscover);
+
+        mockery.checking(new Expectations() {
+            {
+                exactly(1).of(mockFileTransferClient).ensureConnection();
+                exactly(1).of(mockFileTransferClient).ls(sourceDir);
+                will(returnValue(fileList));
+
+            }
+        });
+
+        uut = new FtpEndpointImpl(mockFileTransferClient, mockBaseFileTransferDao, clientID, sourceDir,
+                filenamePattern, minAge, false, false, false);
+
+        // test
+        BaseFileTransferMappedRecord result = uut.getFile();
+
+        // assert
+        assertNull("Returned file last accessed date is now:", result);
+        mockery.assertIsSatisfied();
+    }
+
+
+    @Test
+    public void getFile_when_single_file_is_returned_by_ftp_client_and_file_is_a_sym_link() throws
+            ClientCommandCdException, ClientCommandLsException,
+            URISyntaxException {
+
+        // setup
+        final List<ClientListEntry> fileList = new ArrayList<ClientListEntry>();
+        final ClientListEntry fileToDiscover = BaseFileTransferCommandJUnitHelper.createEntry(filename);
+        fileToDiscover.isLink(true);
+        fileList.add(fileToDiscover);
+
+        mockery.checking(new Expectations() {
+            {
+                exactly(1).of(mockFileTransferClient).ensureConnection();
+                exactly(1).of(mockFileTransferClient).ls(sourceDir);
+                will(returnValue(fileList));
+
+            }
+        });
+
+        uut = new FtpEndpointImpl(mockFileTransferClient, mockBaseFileTransferDao, clientID, sourceDir,
+                filenamePattern, minAge, false, false, false);
+
+        // test
+        BaseFileTransferMappedRecord result = uut.getFile();
+
+        // assert
+        assertNull("Returned file was a symlink : ", result);
+        mockery.assertIsSatisfied();
+    }
+
+    @Test
+    public void getFile_when_single_file_is_returned_by_ftp_client_and_file_is_a_directory() throws
+            ClientCommandCdException, ClientCommandLsException,
+            URISyntaxException {
+
+        // setup
+        final List<ClientListEntry> fileList = new ArrayList<ClientListEntry>();
+        final ClientListEntry fileToDiscover = BaseFileTransferCommandJUnitHelper.createEntry(filename);
+        fileToDiscover.isDirectory(true);
+        fileList.add(fileToDiscover);
+
+        mockery.checking(new Expectations() {
+            {
+                exactly(1).of(mockFileTransferClient).ensureConnection();
+                exactly(1).of(mockFileTransferClient).ls(sourceDir);
+                will(returnValue(fileList));
+
+            }
+        });
+
+        uut = new FtpEndpointImpl(mockFileTransferClient, mockBaseFileTransferDao, clientID, sourceDir,
+                filenamePattern, minAge, false, false, false);
+
+        // test
+        BaseFileTransferMappedRecord result = uut.getFile();
+
+        // assert
+        assertNull("Returned file was a directory : ", result);
+        mockery.assertIsSatisfied();
+    }
+
+
+    @Test
+    public void getFile_when_single_file_is_returned_by_ftp_client_and_filterOnDuplicate_is_true_and_filterByName() throws
+            ClientCommandCdException, ClientCommandLsException,
+            URISyntaxException {
+
+        // setup
+        final boolean filterOnDuplicate = true;
+        final boolean filterOnFilename = true;
+        final boolean filterOnLastModifiedDate = false;
+        final List<ClientListEntry> fileList = new ArrayList<ClientListEntry>();
+        final ClientListEntry fileToDiscover = BaseFileTransferCommandJUnitHelper.createEntry(filename);
+        fileList.add(fileToDiscover);
+
+        final BaseFileTransferMappedRecord record = new BaseFileTransferMappedRecord();
+
+        mockery.checking(new Expectations() {
+            {
+                exactly(1).of(mockFileTransferClient).ensureConnection();
+                exactly(1).of(mockFileTransferClient).ls(sourceDir);
+                will(returnValue(fileList));
+
+                exactly(1).of(mockBaseFileTransferDao).isDuplicate(fileToDiscover, filterOnFilename, filterOnLastModifiedDate);
+                will(returnValue(false));
+
+                exactly(1).of(mockFileTransferClient).get(fileToDiscover);
+                will(returnValue(record));
+
+            }
+        });
+
+        uut = new FtpEndpointImpl(mockFileTransferClient, mockBaseFileTransferDao, clientID, sourceDir,
+                filenamePattern, minAge, filterOnDuplicate, filterOnFilename, false);
+
+        // test
+        BaseFileTransferMappedRecord result = uut.getFile();
+
+        // assert
+        assertEquals(record, result);
+        mockery.assertIsSatisfied();
+    }
+
+
+    @Test
+    public void getFile_when_single_file_is_returned_by_ftp_client_and_filterOnDuplicate_is_true_and_filterOnFilename_is_true() throws
+            ClientCommandCdException, ClientCommandLsException,
+            URISyntaxException {
+
+        // setup
+        final boolean filterOnDuplicate = true;
+        final boolean filterOnFilename = true;
+        final boolean filterOnLastModifiedDate = false;
+        final List<ClientListEntry> fileList = new ArrayList<ClientListEntry>();
+        final ClientListEntry fileToDiscover = BaseFileTransferCommandJUnitHelper.createEntry(filename);
+        fileList.add(fileToDiscover);
+
+        final BaseFileTransferMappedRecord record = new BaseFileTransferMappedRecord();
+
+        mockery.checking(new Expectations() {
+            {
+                exactly(1).of(mockFileTransferClient).ensureConnection();
+                exactly(1).of(mockFileTransferClient).ls(sourceDir);
+                will(returnValue(fileList));
+
+                exactly(1).of(mockBaseFileTransferDao).isDuplicate(fileToDiscover, filterOnFilename, filterOnLastModifiedDate);
+                will(returnValue(true));
+
+                exactly(0).of(mockFileTransferClient).get(fileToDiscover);
+
+            }
+        });
+
+        uut = new FtpEndpointImpl(mockFileTransferClient, mockBaseFileTransferDao, clientID, sourceDir,
+                filenamePattern, minAge, filterOnDuplicate, filterOnFilename, filterOnLastModifiedDate);
+
+        // test
+        BaseFileTransferMappedRecord result = uut.getFile();
+
+        // assert
+        assertNull("Returned file was a duplicate based on filename : ", result);
+        mockery.assertIsSatisfied();
+    }
+
+    @Test
+    public void getFile_when_single_file_is_returned_by_ftp_client_and_filterOnDuplicate_is_true_and_filterOnLastModifiedDate_is_true() throws
+            ClientCommandCdException, ClientCommandLsException,
+            URISyntaxException {
+
+        // setup
+        final boolean filterOnDuplicate = true;
+        final boolean filterOnFilename = false;
+        final boolean filterOnLastModifiedDate = true;
+        final List<ClientListEntry> fileList = new ArrayList<ClientListEntry>();
+        final ClientListEntry fileToDiscover = BaseFileTransferCommandJUnitHelper.createEntry(filename);
+        fileList.add(fileToDiscover);
+
+        mockery.checking(new Expectations() {
+            {
+                exactly(1).of(mockFileTransferClient).ensureConnection();
+                exactly(1).of(mockFileTransferClient).ls(sourceDir);
+                will(returnValue(fileList));
+
+                exactly(1).of(mockBaseFileTransferDao).isDuplicate(fileToDiscover, filterOnFilename, filterOnLastModifiedDate);
+                will(returnValue(true));
+
+                exactly(0).of(mockFileTransferClient).get(fileToDiscover);
+
+            }
+        });
+
+        uut = new FtpEndpointImpl(mockFileTransferClient, mockBaseFileTransferDao, clientID, sourceDir,
+                filenamePattern, minAge, filterOnDuplicate, filterOnFilename, filterOnLastModifiedDate);
+
+        // test
+        BaseFileTransferMappedRecord result = uut.getFile();
+
+        // assert
+        assertNull("Returned file was duplicate based on file LastModifiedDate  : ", result);
+        mockery.assertIsSatisfied();
+    }
+
 }

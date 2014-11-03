@@ -42,12 +42,11 @@ package org.ikasan.component.endpoint.ftp.consumer;
 
 import org.apache.log4j.Logger;
 
-import org.ikasan.component.endpoint.ftp.common.BaseFileTransferMappedRecord;
-import org.ikasan.component.endpoint.ftp.common.ClientConnectionException;
-import org.ikasan.component.endpoint.ftp.common.ClientInitialisationException;
+import org.ikasan.component.endpoint.common.BaseFileTransferMappedRecord;
+import org.ikasan.component.endpoint.common.ClientConnectionException;
+import org.ikasan.component.endpoint.common.ClientInitialisationException;
 import org.ikasan.component.endpoint.ftp.endpoint.FtpEndpoint;
 import org.ikasan.component.endpoint.ftp.endpoint.FtpEndpointFactory;
-import org.ikasan.component.endpoint.ftp.endpoint.FtpEndpointImpl;
 import org.ikasan.scheduler.ScheduledJobFactory;
 import org.ikasan.spec.component.endpoint.Consumer;
 import org.ikasan.spec.configuration.ConfiguredResource;
@@ -57,7 +56,6 @@ import org.ikasan.spec.flow.FlowEvent;
 import org.quartz.*;
 
 
-import java.io.InputStream;
 import java.text.ParseException;
 import java.util.Date;
 

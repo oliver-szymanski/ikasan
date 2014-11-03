@@ -38,46 +38,45 @@
  * USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  * ====================================================================
  */
-package org.ikasan.component.endpoint.ftp.common;
+package org.ikasan.component.endpoint.common;
 
 /**
- * Class used to wrap all of the exceptions thrown by the underlying 
- * File Transfer client library.
- *
  * @author Ikasan Development Team 
  */
-public class ClientException extends RuntimeException
+public class ClientCommandRenameException extends RuntimeException
 {
     /** GUID */
     private static final long serialVersionUID = 1L;
 
-    /**
-     * Constructor
-     * @param message
-     */
-    public ClientException(final String message)
+    /** Constructor */
+    public ClientCommandRenameException()
     {
-        super(message, (Throwable) null);
+        // Do Nothing
     }
 
     /**
-     * Constructor
-     * @param cause
-     */
-    public ClientException(final Throwable cause)
-    {
-        super((String) null, cause);
-    }
-
-    /**
-     * Constructor
      * @param message
      * @param cause
      */
-    public ClientException(final String message, final Throwable cause)
+    public ClientCommandRenameException(String message, Throwable cause)
     {
         super(message, cause);
     }
 
-}
+    /**
+     * @param message
+     */
+    public ClientCommandRenameException(String message)
+    {
+        super(message);
+    }
 
+    /**
+     * @param cause
+     */
+    public ClientCommandRenameException(Throwable cause)
+    {
+        super(cause);
+    }
+
+}

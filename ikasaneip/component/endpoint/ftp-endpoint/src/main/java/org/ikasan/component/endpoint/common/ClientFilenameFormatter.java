@@ -38,45 +38,17 @@
  * USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  * ====================================================================
  */
-package org.ikasan.component.endpoint.ftp.common;
+package org.ikasan.component.endpoint.common;
 
 /**
- * Covers the Exception range for checksum Exceptions
  * @author Ikasan Development Team 
  */
-public class ChecksumFailedException extends RuntimeException
+public interface ClientFilenameFormatter
 {
-    /** serial UID */
-    private static final long serialVersionUID = 1L;
-
-    /** Constructor */
-    public ChecksumFailedException()
-    {
-        // Do Nothing
-    }
-
     /**
-     * @param message
-     * @param cause
+     * translate the file name
+     * @param filename
+     * @return translated filename
      */
-    public ChecksumFailedException(String message, Throwable cause)
-    {
-        super(message, cause);
-    }
-
-    /**
-     * @param message
-     */
-    public ChecksumFailedException(String message)
-    {
-        super(message);
-    }
-
-    /**
-     * @param cause
-     */
-    public ChecksumFailedException(Throwable cause)
-    {
-        super(cause);
-    }
+    public String translateFilename(String filename);
 }

@@ -38,45 +38,42 @@
  * USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  * ====================================================================
  */
-package org.ikasan.component.endpoint.ftp.common;
+package org.ikasan.component.endpoint.common;
 
 /**
  * @author Ikasan Development Team 
  */
-public class ClientCommandMkdirException extends RuntimeException
+public class ClientConnectionException extends RuntimeException
 {
     /** GUID */
     private static final long serialVersionUID = 1L;
 
-    /** Default Constructor */
-    public ClientCommandMkdirException()
+    /**
+     * Constructor
+     * @param message
+     */
+    public ClientConnectionException(final String message)
     {
-        // Do Nothing
+        super(message, (Throwable) null);
     }
 
     /**
+     * Constructor
+     * @param cause
+     */
+    public ClientConnectionException(final Throwable cause)
+    {
+        super((String) null, cause);
+    }
+
+    /**
+     * Constructor
      * @param message
      * @param cause
      */
-    public ClientCommandMkdirException(String message, Throwable cause)
+    public ClientConnectionException(final String message, final Throwable cause)
     {
         super(message, cause);
-    }
-
-    /**
-     * @param message
-     */
-    public ClientCommandMkdirException(String message)
-    {
-        super(message);
-    }
-
-    /**
-     * @param cause
-     */
-    public ClientCommandMkdirException(Throwable cause)
-    {
-        super(cause);
     }
 
 }

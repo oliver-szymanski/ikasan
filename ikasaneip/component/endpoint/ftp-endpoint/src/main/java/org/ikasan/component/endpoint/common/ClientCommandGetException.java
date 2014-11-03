@@ -38,18 +38,21 @@
  * USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  * ====================================================================
  */
-package org.ikasan.component.endpoint.ftp.common;
+package org.ikasan.component.endpoint.common;
 
 /**
- * @author Ikasan Development Team 
+ * @author Ikasan Development Team
  */
-public class ClientCommandRenameException extends RuntimeException
+public class ClientCommandGetException extends RuntimeException
 {
+    
     /** GUID */
     private static final long serialVersionUID = 1L;
 
-    /** Constructor */
-    public ClientCommandRenameException()
+    /**
+     * Default constructor
+     */
+    public ClientCommandGetException()
     {
         // Do Nothing
     }
@@ -58,7 +61,7 @@ public class ClientCommandRenameException extends RuntimeException
      * @param message
      * @param cause
      */
-    public ClientCommandRenameException(String message, Throwable cause)
+    public ClientCommandGetException(String message, Throwable cause)
     {
         super(message, cause);
     }
@@ -66,7 +69,7 @@ public class ClientCommandRenameException extends RuntimeException
     /**
      * @param message
      */
-    public ClientCommandRenameException(String message)
+    public ClientCommandGetException(String message)
     {
         super(message);
     }
@@ -74,7 +77,7 @@ public class ClientCommandRenameException extends RuntimeException
     /**
      * @param cause
      */
-    public ClientCommandRenameException(Throwable cause)
+    public ClientCommandGetException(Throwable cause)
     {
         super(cause);
     }

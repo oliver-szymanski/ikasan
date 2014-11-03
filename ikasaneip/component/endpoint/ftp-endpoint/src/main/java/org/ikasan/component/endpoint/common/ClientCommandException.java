@@ -38,71 +38,40 @@
  * USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  * ====================================================================
  */
-package org.ikasan.component.endpoint.ftp.common;
-
-import org.apache.log4j.Logger;
-
-import java.util.ArrayList;
-import java.util.List;
+package org.ikasan.component.endpoint.common;
 
 /**
- * Symbolic Link filter
- * 
- * @author Ikasan Development Team 
+ * @author Ikasan Development Team
  */
-public class ClientSymLinkFilter implements ClientFilter
+public class ClientCommandException extends RuntimeException
 {
-    /** logger */
-    private static Logger logger = 
-        Logger.getLogger(ClientSymLinkFilter.class);
-    
+    /** GUID */
+    private static final long serialVersionUID = 1L;
+
     /**
-     * Constructor
+     * @param message
      */
-    public ClientSymLinkFilter()
+    public ClientCommandException(final String message)
     {
-        // Do Nothing;
+        super(message, (Throwable) null);
     }
 
     /**
-     * Method to match <code>ClientListEntry</code> objects based on
-     * whether they represent symbolic links or not.
-     * 
-     * @param entry The <code>ClientListEntry</code> to match.
-     * @return <code>true</code> if <code>ClientListEntry</code> is a
-     *         symbolic link, <code>false</code> otherwise.
+     * @param cause
      */
-    public boolean match(ClientListEntry entry)
+    public ClientCommandException(final Throwable cause)
     {
-        return (entry.isLink()) ? true : false;
+        super((String) null, cause);
     }
 
     /**
-     * Method to filter out unmatched <code>ClientListEntry</code> objects
-     * from a List.
-     * 
-     * @param entries The <code>List</code> of <code>ClientListEntries</code> 
-     * to filter.
-     * @return A <code>List</code> of all <code>ClientListEntries</code> 
-     * matching the <code>Filter</code>'s criteria.
-     * 
+     * @param message
+     * @param cause
      */
-    public List<ClientListEntry> filter(List<ClientListEntry> entries)
+    public ClientCommandException(final String message,
+            final Throwable cause)
     {
-        ArrayList<ClientListEntry> validEntries = 
-            new ArrayList<ClientListEntry>();
-        
-        for (ClientListEntry entry : entries)
-            if (this.match(entry))
-            {
-                logger.debug("Filtering out entry [" + entry + "]");  //$NON-NLS-1$//$NON-NLS-2$
-            }
-            else
-            {
-                logger.debug("Including entry [" + entry + "] to valid entries");  //$NON-NLS-1$//$NON-NLS-2$
-                validEntries.add(entry);
-            }
-
-        return validEntries;
+        super(message, cause);
     }
+
 }

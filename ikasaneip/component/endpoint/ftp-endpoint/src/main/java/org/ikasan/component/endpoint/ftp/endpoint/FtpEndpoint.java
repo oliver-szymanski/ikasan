@@ -45,7 +45,7 @@
  */
 package org.ikasan.component.endpoint.ftp.endpoint;
 
-import org.ikasan.component.endpoint.ftp.common.BaseFileTransferMappedRecord;
+import org.ikasan.component.endpoint.common.BaseFileTransferMappedRecord;
 
 public interface FtpEndpoint {
 

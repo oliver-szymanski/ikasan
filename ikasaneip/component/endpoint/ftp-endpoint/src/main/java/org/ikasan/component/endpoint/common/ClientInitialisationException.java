@@ -1,7 +1,7 @@
-/* 
+/*
  * $Id$
  * $URL$
- *
+ * 
  * ====================================================================
  * Ikasan Enterprise Integration Platform
  * 
@@ -38,29 +38,42 @@
  * USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  * ====================================================================
  */
-package org.ikasan.sample.ftpConsumerPriceSrc.component.endpoint;
-
-import org.apache.log4j.Logger;
-import org.ikasan.component.endpoint.common.BaseFileTransferMappedRecord;
-import org.ikasan.spec.component.endpoint.EndpointException;
-import org.ikasan.spec.component.endpoint.Producer;
+package org.ikasan.component.endpoint.common;
 
 /**
- * Implementation of a producer which simply logs the incoming
- * BaseFileTransferMappedRecord payload content.
- * 
- * @author Ikasan Development Team
+ * @author Ikasan Development Team 
  */
-public class PriceLoggerProducer implements Producer<BaseFileTransferMappedRecord>
+public class ClientInitialisationException extends RuntimeException
 {
-    /** Logger instance */
-    private Logger logger = Logger.getLogger(PriceLoggerProducer.class);
+    /** serial GUID */
+    private static final long serialVersionUID = 1L;
 
     /**
-     * Message invocation
+     * Constructor
+     * @param message
      */
-    public void invoke(BaseFileTransferMappedRecord payload) throws EndpointException
+    public ClientInitialisationException(final String message)
     {
-        logger.info("Producer invoked with [" + payload + "]");
+        super(message, (Throwable) null);
     }
+
+    /**
+     * Constructor
+     * @param cause
+     */
+    public ClientInitialisationException(final Throwable cause)
+    {
+        super((String) null, cause);
+    }
+
+    /**
+     * Constructor
+     * @param message
+     * @param cause
+     */
+    public ClientInitialisationException(final String message, final Throwable cause)
+    {
+        super(message, cause);
+    }
+
 }

@@ -41,13 +41,11 @@
 package org.ikasan.component.endpoint.ftp.endpoint;
 
 import org.apache.log4j.Logger;
-import org.ikasan.component.endpoint.ftp.common.*;
+import org.ikasan.component.endpoint.common.ClientConnectionException;
+import org.ikasan.component.endpoint.common.ClientInitialisationException;
+import org.ikasan.component.endpoint.common.FileTransferProtocolClient;
 import org.ikasan.component.endpoint.ftp.consumer.FtpConsumerConfiguration;
-
-import java.net.URISyntaxException;
-import java.util.ArrayList;
-import java.util.Date;
-import java.util.List;
+import org.ikasan.component.endpoint.persistence.dao.BaseFileTransferDao;
 
 /**
  * Ftp Endpoint Contract which if going to be pulled by FtpConsumer on scheduled basis.
@@ -61,11 +59,14 @@ public class FtpEndpointFactory {
      */
     private static Logger logger = Logger.getLogger(FtpEndpointFactory.class);
 
+
+    private BaseFileTransferDao baseFileTransferDao;
+
     /**
      * InitialisesFtpEndpointImpl with FtpConsumerConfiguration properties and
      * creates the FileTransferProtocolClient  and opens the connection.
      *
-     * @throws org.ikasan.component.endpoint.ftp.common.ClientInitialisationException Exception thrown by connector
+     * @throws org.ikasan.component.endpoint.common.ClientInitialisationException Exception thrown by connector
      */
     public FtpEndpoint createFtpEndpoint(FtpConsumerConfiguration configuration) throws ClientInitialisationException, ClientConnectionException {
 
@@ -132,6 +133,7 @@ public class FtpEndpointFactory {
         ftpClient.login();
 
         FtpEndpoint ftpEndpoint = new FtpEndpointImpl(ftpClient,
+                baseFileTransferDao,
                 configuration.getClientID(),
                 configuration.getSourceDirectory(),
                 configuration.getFilenamePattern(),

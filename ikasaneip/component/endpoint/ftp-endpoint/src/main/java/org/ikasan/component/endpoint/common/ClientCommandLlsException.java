@@ -38,29 +38,45 @@
  * USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  * ====================================================================
  */
-package org.ikasan.component.endpoint.ftp.common;
-
-import java.util.List;
+package org.ikasan.component.endpoint.common;
 
 /**
- * Client Filter interface
- * 
- * @author Ikasan Development Team 
+ * @author Ikasan Development Team
  */
-public interface ClientFilter
+public class ClientCommandLlsException extends RuntimeException
 {
+    /** UID */
+    private static final long serialVersionUID = 1L;
+
+    /** Constructor */
+    public ClientCommandLlsException()
+    {
+        // Do Nothing
+    }
+
     /**
-     * Return true if the ClientListEntry matches
-     * @param lsEntry
-     * @return true if the ClientListEntry matches else false
+     * @param message
+     * @param cause
      */
-    public boolean match(ClientListEntry lsEntry);
-    
+    public ClientCommandLlsException(String message, Throwable cause)
+    {
+        super(message, cause);
+    }
+
     /**
-     * return a filtered list of ClientListEntry objects 
-     * @param entries
-     * @return filtered list of ClientListEntry objects
+     * @param message
      */
-    public List<ClientListEntry> 
-        filter(List<ClientListEntry> entries);
+    public ClientCommandLlsException(String message)
+    {
+        super(message);
+    }
+
+    /**
+     * @param cause
+     */
+    public ClientCommandLlsException(Throwable cause)
+    {
+        super(cause);
+    }
+
 }

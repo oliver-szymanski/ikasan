@@ -38,15 +38,16 @@
  * USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  * ====================================================================
  */
-package org.ikasan.component.endpoint.ftp.common;
-
-import org.apache.commons.lang.builder.EqualsBuilder;
-import org.apache.commons.lang.builder.HashCodeBuilder;
+package org.ikasan.component.endpoint.common;
 
 import java.net.URI;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
+
+import org.apache.commons.lang.builder.EqualsBuilder;
+import org.apache.commons.lang.builder.HashCodeBuilder;
+import org.ikasan.component.endpoint.persistence.model.FileFilter;
 
 /**
  * The <code>ClientListEntry</code> class holds information reflecting a
@@ -83,9 +84,9 @@ public class ClientListEntry
     /** Complete 'ls' entry (e.g. "drwxr-xr-x    6 herodotos herodotos      204 Nov 25 17:36 Sites") */
     private String longFilename;
     /** Last accessed time as long */
-    private long Atime;                  
+    private long Atime;
     /** Last modified time as long */
-    private long Mtime;                  
+    private long Mtime;
     /** Last accessed time as a string formatted by jsch (e.g. "1/14/70 12:27 PM") */
     private String AtimeString;
     /** Last modified time as a string formatted by jsch (e.g. "Sat Nov 25 17:36:21 GMT 2006") */
@@ -95,11 +96,11 @@ public class ClientListEntry
     /** Group id (e.g. "501") */
     private String gid;
     /** User  id (e.g. "501") */
-    private String uid;                 
+    private String uid;
     /** Permissions as an int (e.g. "16877") */
     private int permissions;
     /** Permissions as a String (e.g. "drwxr-xr-x") */
-    private String permissionsString;   
+    private String permissionsString;
     /** Additional info (Has not been encountered yet!) */
     private ArrayList<String> extended;
 
@@ -142,7 +143,7 @@ public class ClientListEntry
     {
         this.clientId = clientId;
     }
-    
+
     /**
      * @return the atime
      */
@@ -180,7 +181,7 @@ public class ClientListEntry
      * @return the atimeString
      */
     public String getAtimeString(){
-    
+
         return AtimeString;
     }
 
@@ -420,21 +421,21 @@ public class ClientListEntry
      * Method used to implement the Comparable interface and compare/order
      * <code>ClientListEntries</code> according to the following natural
      * order:
-     * 
+     *
      * <ol>
      *   <li>Uri</li>
      *   <li>LastModified</li>
      *   <li>LastAccessed</li>
      *   <li>Size</li>
      * </ol>
-     * 
+     *
      * @param object The <code>ClientListEntry</code> to compare with this
      * one.
-     * 
+     *
      * @return <code>0</code> if the objects are identical, <code>-1</code> if
      * the object compared to this one is relatively smaller, <code>1</code> if
      * the object compared to this one is relatively bigger.
-     * 
+     *
      * @throws ClassCastException If the <code>object</code> parameter is not of
      * type <code>ClientListEntry</code>
      */
@@ -471,8 +472,28 @@ public class ClientListEntry
         else
             return 1;
     }
-    
 
+    /**
+     * Used to create a <code>FileFilter</code> object which can
+     * be used for persisting/filtering the entry.
+     *
+     * <p>Note: size is currently downcast from long to int. Maybe change the
+     * persist object and table definition to handle this.</p>
+     *
+     * NOTE:  Order is important due to the Hibernate mapping
+     *
+     * @return An <code>FileFilter</code> object holding this 
+     * entry's URI as string, lastModified, lastAccessed and size.
+     */
+    public FileFilter toPersistObject()
+    {
+        return new FileFilter(
+                this.getClientId(),
+                this.getName(),
+                this.getDtLastModified(),
+                this.getDtLastAccessed(),
+                (int)this.getSize());
+    }
 
     /**
      * @return A formatted representation of this object.
@@ -487,7 +508,7 @@ public class ClientListEntry
 
         sb.append("]\nURI     = ["); //$NON-NLS-1$
         sb.append(this.uri);
-        
+
         sb.append("]\nLast accessed     = ["); //$NON-NLS-1$
         if (this.dtLastAccessed != null)
         {
@@ -524,7 +545,7 @@ public class ClientListEntry
         {
             sb.append("null"); //$NON-NLS-1$
         }
-        
+
         sb.append("]\nAtime             = ["); //$NON-NLS-1$
         sb.append(this.Atime);
         sb.append("]\nAtimeString       = ["); //$NON-NLS-1$
@@ -544,7 +565,7 @@ public class ClientListEntry
         sb.append("]\nPermissionsString = ["); //$NON-NLS-1$
         sb.append(this.permissionsString);
         sb.append("]\n"); //$NON-NLS-1$
-        
+
         if (this.extended != null)
         {
             for (String i : this.extended)
@@ -557,7 +578,7 @@ public class ClientListEntry
     }
 
     /**
-     * @see Object#equals(Object)
+     * @see java.lang.Object#equals(Object)
      */
     @Override
     public boolean equals(Object object)
@@ -575,19 +596,19 @@ public class ClientListEntry
     }
 
     /**
-     * @see Object#hashCode()
+     * @see java.lang.Object#hashCode()
      */
     @Override
     public int hashCode()
     {
         return new HashCodeBuilder(-2145271435, 1455695833).appendSuper(
-            super.hashCode()).append(this.MtimeString).append(this.uid).append(
-            this.permissionsString).append(this.longFilename).append(
-            this.AtimeString).append(this.isLink).append(this.dtLastModified)
-            .append(this.isDirectory).append(this.permissions).append(
-                this.Mtime).append(this.uri).append(this.gid).append(
-                this.extended).append(this.clientId).append(this.size).append(
-                this.Atime).append(this.dtLastAccessed).append(this.Flags)
-            .toHashCode();
+                super.hashCode()).append(this.MtimeString).append(this.uid).append(
+                this.permissionsString).append(this.longFilename).append(
+                this.AtimeString).append(this.isLink).append(this.dtLastModified)
+                .append(this.isDirectory).append(this.permissions).append(
+                        this.Mtime).append(this.uri).append(this.gid).append(
+                        this.extended).append(this.clientId).append(this.size).append(
+                        this.Atime).append(this.dtLastAccessed).append(this.Flags)
+                .toHashCode();
     }
 }

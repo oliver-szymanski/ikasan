@@ -38,45 +38,64 @@
  * USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  * ====================================================================
  */
-package org.ikasan.component.endpoint.ftp.common;
+package org.ikasan.component.endpoint.common;
+
+import org.apache.log4j.Logger;
+
+import java.util.ArrayList;
+import java.util.List;
 
 /**
- * @author Ikasan Development Team 
+ * @author Ikasan Development Team
  */
-public class ClientCommandLsException extends RuntimeException
-{
-    /** GUID */
-    private static final long serialVersionUID = 1L;
+public class ClientDirectoryFilter implements ClientFilter {
+    /**
+     * Logger
+     */
+    private static Logger logger =
+            Logger.getLogger(ClientDirectoryFilter.class);
 
-    /** Constructor */
-    public ClientCommandLsException()
-    {
-        // Auto-generated constructor stub
+    /**
+     * Constructor
+     */
+    public ClientDirectoryFilter() {
+        // Do Nothing
     }
 
     /**
-     * @param message
-     * @param cause
+     * Method to match <code>ClientListEntry</code> objects based on
+     * whether they represent directories or not.
+     *
+     * @param lsEntry The <code>ClientListEntry</code> to match.
+     * @return <code>true</code> if <code>ClientListEntry</code> is a
+     * directory, <code>false</code> otherwise.
      */
-    public ClientCommandLsException(String message, Throwable cause)
-    {
-        super(message, cause);
+    public boolean match(ClientListEntry lsEntry) {
+        return (lsEntry.isDirectory()) ? true : false;
     }
 
     /**
-     * @param message
+     * Method to filter out unmatched <code>ClientListEntry</code> objects
+     * from an ArrayList.
+     *
+     * @param entries The <code>ArrayList</code> of
+     *                <code>ClientListEntries</code> to filter.
+     * @return An <code>ArrayList</code> of all
+     * <code>ClientListEntries</code> matching the
+     * <code>Filter</code>'s criteria
      */
-    public ClientCommandLsException(String message)
-    {
-        super(message);
-    }
+    public List<ClientListEntry> filter(List<ClientListEntry> entries) {
+        ArrayList<ClientListEntry> validEntries =
+                new ArrayList<ClientListEntry>();
 
-    /**
-     * @param cause
-     */
-    public ClientCommandLsException(Throwable cause)
-    {
-        super(cause);
-    }
+        for (ClientListEntry entry : entries)
+            if (this.match(entry)) {
+                logger.debug("Filtering out entry [" + entry + "]"); //$NON-NLS-1$ //$NON-NLS-2$
+            } else {
+                logger.debug("Including entry [" + entry + "] to valid entries"); //$NON-NLS-1$ //$NON-NLS-2$
+                validEntries.add(entry);
+            }
 
+        return validEntries;
+    }
 }

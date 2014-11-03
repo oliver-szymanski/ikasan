@@ -38,64 +38,51 @@
  * USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  * ====================================================================
  */
-package org.ikasan.component.endpoint.ftp.common;
+package org.ikasan.component.endpoint.persistence.dao;
 
-import org.apache.log4j.Logger;
-
-import java.util.ArrayList;
-import java.util.List;
+import org.hibernate.HibernateException;
+import org.ikasan.component.endpoint.common.ClientListEntry;
 
 /**
+ * Data Access Interface for File Transfer objects
+ * 
  * @author Ikasan Development Team
  */
-public class ClientDirectoryFilter implements ClientFilter {
-    /**
-     * Logger
-     */
-    private static Logger logger =
-            Logger.getLogger(ClientDirectoryFilter.class);
+public interface BaseFileTransferDao {
+
+	/**
+	 * Method that checks if an <code>ClientListEntry</code> is already
+	 * included in the filter table.
+	 * 
+	 * @param entry The <code>ClientListEntry</code> to filter
+	 * @param filterOnFilename 
+	 * @param filterOnLastModifiedDate 
+	 * @return <code>true</code> if the entry is a duplicate,
+	 *         <code>false</code> otherwise.
+	 * @throws NullPointerException
+	 * @throws HibernateException
+	 */
+	public abstract boolean isDuplicate(ClientListEntry entry, boolean filterOnFilename, boolean filterOnLastModifiedDate) throws HibernateException;
+
+	/**
+	 * Derives an <code>FileFilter</code> from the provided
+	 * <code>ClientListEntry</code> and persists it to the filtering
+	 * table.
+	 * 
+	 * @param entry the <code>ClientListEntry</code> to save.
+	 * @throws HibernateException
+	 */
+	public abstract void persistClientListEntry(ClientListEntry entry) throws HibernateException;
 
     /**
-     * Constructor
+     * Housekeeps <code>FileFilter</code> entries.
+     * 
+     * @param clientId The clientId (as multiple clients share the same table) 
+     * @param ageOfFiles (delete from today minus ageOfFiles in Days)
+     * @param maxRows The maximum number of rows the housekeeping can deal with
+     * 
+     * @throws HibernateException
      */
-    public ClientDirectoryFilter() {
-        // Do Nothing
-    }
-
-    /**
-     * Method to match <code>ClientListEntry</code> objects based on
-     * whether they represent directories or not.
-     *
-     * @param lsEntry The <code>ClientListEntry</code> to match.
-     * @return <code>true</code> if <code>ClientListEntry</code> is a
-     * directory, <code>false</code> otherwise.
-     */
-    public boolean match(ClientListEntry lsEntry) {
-        return (lsEntry.isDirectory()) ? true : false;
-    }
-
-    /**
-     * Method to filter out unmatched <code>ClientListEntry</code> objects
-     * from an ArrayList.
-     *
-     * @param entries The <code>ArrayList</code> of
-     *                <code>ClientListEntries</code> to filter.
-     * @return An <code>ArrayList</code> of all
-     * <code>ClientListEntries</code> matching the
-     * <code>Filter</code>'s criteria
-     */
-    public List<ClientListEntry> filter(List<ClientListEntry> entries) {
-        ArrayList<ClientListEntry> validEntries =
-                new ArrayList<ClientListEntry>();
-
-        for (ClientListEntry entry : entries)
-            if (this.match(entry)) {
-                logger.debug("Filtering out entry [" + entry + "]"); //$NON-NLS-1$ //$NON-NLS-2$
-            } else {
-                logger.debug("Including entry [" + entry + "] to valid entries"); //$NON-NLS-1$ //$NON-NLS-2$
-                validEntries.add(entry);
-            }
-
-        return validEntries;
-    }
+    public abstract void housekeep(String clientId, int ageOfFiles, int maxRows) throws HibernateException;
+	
 }
