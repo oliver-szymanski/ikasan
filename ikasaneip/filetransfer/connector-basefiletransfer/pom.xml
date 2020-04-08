@@ -94,6 +94,12 @@
             <scope>provided</scope>
         </dependency>
 
+        <!-- used to cache the duplicate files for sftp -->
+        <dependency>
+            <groupId>com.google.guava</groupId>
+            <artifactId>guava</artifactId>
+        </dependency>
+
         <dependency>
             <groupId>cglib</groupId>
             <artifactId>cglib-nodep</artifactId>

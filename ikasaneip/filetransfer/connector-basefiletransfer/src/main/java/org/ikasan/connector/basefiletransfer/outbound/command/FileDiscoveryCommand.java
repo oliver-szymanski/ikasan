@@ -41,6 +41,7 @@
 package org.ikasan.connector.basefiletransfer.outbound.command;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.Date;
 import java.util.List;
 
@@ -50,11 +51,7 @@ import org.apache.commons.lang.builder.ToStringBuilder;
 import org.apache.log4j.Logger;
 import org.ikasan.connector.base.command.ExecutionContext;
 import org.ikasan.connector.base.command.ExecutionOutput;
-import org.ikasan.connector.basefiletransfer.net.ClientDirectoryFilter;
-import org.ikasan.connector.basefiletransfer.net.ClientFilenameFilter;
-import org.ikasan.connector.basefiletransfer.net.ClientListEntry;
-import org.ikasan.connector.basefiletransfer.net.ClientPolarisedFilter;
-import org.ikasan.connector.basefiletransfer.net.ClientSymLinkFilter;
+import org.ikasan.connector.basefiletransfer.net.*;
 import org.ikasan.connector.basefiletransfer.outbound.persistence.BaseFileTransferDao;
 
 /**
@@ -91,6 +88,12 @@ public class FileDiscoveryCommand extends AbstractBaseFileTransferTransactionalR
     /** Whether the file discovery will travers sub directories recursively  */
     private boolean isRecursive;
 
+    /** Whether we check for files chronological */
+    private boolean chronological;
+
+    /** Whether we only return first result */
+    private boolean onlyFirstResult;
+
     /** No args constructor as required by Hibernate */
     public FileDiscoveryCommand()
     {
@@ -107,9 +110,13 @@ public class FileDiscoveryCommand extends AbstractBaseFileTransferTransactionalR
      * @param filterDuplicates Whether we filter duplicates
      * @param filterOnFilename Whether we filter on file name
      * @param filterOnLastModifiedDate Whether we filter on the last modified date
+     * @param isRecursive Wether we check for files recursively
+     * @param chronological Whether we sort results chronologically
+     * @param onlyFirstResult Whether we return only the first result
      */
     public FileDiscoveryCommand(String sourceDirectory, String filenamePattern, BaseFileTransferDao persistence,
-            long minAge, boolean filterDuplicates, boolean filterOnFilename, boolean filterOnLastModifiedDate, boolean isRecursive)
+            long minAge, boolean filterDuplicates, boolean filterOnFilename, boolean filterOnLastModifiedDate,
+                                boolean isRecursive, boolean chronological, boolean onlyFirstResult)
     {
         super();
         this.sourceDirectory = sourceDirectory;
@@ -120,6 +127,8 @@ public class FileDiscoveryCommand extends AbstractBaseFileTransferTransactionalR
         this.filterOnFilename = filterOnFilename;
         this.filterOnLastModifiedDate = filterOnLastModifiedDate;
         this.isRecursive = isRecursive;
+        this.chronological = chronological;
+        this.onlyFirstResult = onlyFirstResult;
     }
 
     @Override
@@ -163,10 +172,20 @@ public class FileDiscoveryCommand extends AbstractBaseFileTransferTransactionalR
         List<ClientListEntry> allFiles = new ArrayList<ClientListEntry>();
         allFiles = listDirectory(sourceDirectory, allFiles);
 
-        logFileList(allFiles, "Unfiltered file list"); //$NON-NLS-1$
+        if (logger.isDebugEnabled()) {
+            logFileList(allFiles, "Unfiltered file list"); //$NON-NLS-1$
+        }
+
+        if (this.chronological) {
+            logger.info("Sorting entries list by chronological order.");
+            // sort here so that if we need to only return first we can skip the rest in below code
+            Collections.sort(allFiles, new OlderFirstClientListEntryComparator());
+        }
 
         // Filter the files
-        logger.debug("Filtering entries based on default filter list..."); //$NON-NLS-1$
+        if (logger.isDebugEnabled()) {
+            logger.debug("Filtering entries based on default filter list..."); //$NON-NLS-1$
+        }
         List<ClientListEntry> filteredFiles = filterDefaults(allFiles);
 
         // Process filtered files
@@ -201,11 +220,17 @@ public class FileDiscoveryCommand extends AbstractBaseFileTransferTransactionalR
                     if (!persistence.isDuplicate(entry, filterOnFilename, filterOnLastModifiedDate))
                     {
                         result.add(entry);
+                        if (this.onlyFirstResult) {
+                            return result;
+                        }
                     }
                 }
                 else
                 {
                     result.add(entry);
+                    if (this.onlyFirstResult) {
+                        return result;
+                    }
                 }
             }
         }

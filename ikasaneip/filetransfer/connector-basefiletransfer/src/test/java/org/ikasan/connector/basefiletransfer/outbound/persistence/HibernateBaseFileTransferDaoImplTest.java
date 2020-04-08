@@ -40,10 +40,16 @@
  */
 package org.ikasan.connector.basefiletransfer.outbound.persistence;
 
+import javax.annotation.Nullable;
 import javax.annotation.Resource;
 import javax.sql.DataSource;
 
+import com.google.common.cache.Cache;
+import com.google.common.cache.CacheBuilder;
+import com.google.common.cache.CacheStats;
+import com.google.common.collect.ImmutableMap;
 import org.hibernate.SessionFactory;
+import org.ikasan.connector.basefiletransfer.net.ClientListEntry;
 import org.ikasan.connector.basefiletransfer.persistence.FileFilter;
 import org.junit.Before;
 import org.junit.Test;
@@ -56,11 +62,13 @@ import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Types;
-import java.util.Calendar;
-import java.util.List;
-import java.util.TimeZone;
+import java.util.*;
+import java.util.concurrent.Callable;
+import java.util.concurrent.ConcurrentMap;
+import java.util.concurrent.ExecutionException;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
 
 @RunWith(SpringJUnit4ClassRunner.class)
 //specifies the Spring configuration to load for this test fixture
@@ -72,7 +80,7 @@ public class HibernateBaseFileTransferDaoImplTest
 
     @Resource DataSource xaDataSource;
 
-    BaseFileTransferDao uut;
+    HibernateBaseFileTransferDaoImpl uut;
 
     JdbcTemplate jdbcTemplate;
 
@@ -86,6 +94,23 @@ public class HibernateBaseFileTransferDaoImplTest
     {
         uut = new HibernateBaseFileTransferDaoImpl(sessionFactory);
         jdbcTemplate = new JdbcTemplate(xaDataSource);
+    }
+
+    @Test public void duplicate_check_uses_cache_if_provided()
+    {
+        Cache<String, Boolean> duplicateFilesCache = CacheBuilder.newBuilder().build();
+
+        ClientListEntry entry = new ClientListEntry();
+        entry.setSize(1000L);
+        entry.setClientId("testclient");
+        entry.setDtLastModified(new Date());
+        entry.setFullPath("filename");
+
+        String key = "testclient-filename-" + entry.getDtLastModified().getTime()+"-1000";
+        duplicateFilesCache.put(key, Boolean.TRUE);
+        uut.setDuplicateFilesCache(duplicateFilesCache);
+        boolean result = uut.isDuplicate(entry, true, true);
+        assertTrue("entry was not found in cache as expected", result);
     }
 
     @Test public void housekeep_when_nothing_to_process()

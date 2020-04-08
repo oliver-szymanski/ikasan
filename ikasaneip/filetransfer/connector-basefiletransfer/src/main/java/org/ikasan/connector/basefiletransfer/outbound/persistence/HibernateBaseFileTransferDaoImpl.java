@@ -44,6 +44,8 @@ import java.util.Calendar;
 import java.util.List;
 import java.util.TimeZone;
 
+import com.google.common.cache.Cache;
+
 import org.apache.log4j.Logger;
 import org.hibernate.HibernateException;
 import org.hibernate.Query;
@@ -81,7 +83,8 @@ public class HibernateBaseFileTransferDaoImpl implements BaseFileTransferDao
 
     /** Created Date parameter **/
     private final static String CREATED_DATE_TIME = "createdDateTime"; 
-    
+
+    private final static String CACHE_KEY_DELIMITER = "-";
     /** Hibernate session factory */
     protected SessionFactory sessionFactory;
     
@@ -90,6 +93,8 @@ public class HibernateBaseFileTransferDaoImpl implements BaseFileTransferDao
 
     /** Logger */
     private static Logger logger = Logger.getLogger(HibernateBaseFileTransferDaoImpl.class);
+
+    private Cache<String, Boolean> duplicateFilesCache;
     
     /**
      * Constructor must provide a persistence handle
@@ -107,6 +112,26 @@ public class HibernateBaseFileTransferDaoImpl implements BaseFileTransferDao
      */
     public boolean isDuplicate(ClientListEntry entry, boolean filterOnFilename, boolean filterOnLastModifiedDate) throws HibernateException
     {
+        String cacheKey = null;
+        // check if it exists in the cache
+        if (duplicateFilesCache != null) {
+            StringBuilder cacheKeyBuilder = new StringBuilder(256);
+            cacheKeyBuilder.append(entry.getClientId());
+            if (filterOnFilename) {
+                cacheKeyBuilder.append(CACHE_KEY_DELIMITER).append(entry.getFullPath());
+            }
+            if (filterOnLastModifiedDate) {
+                cacheKeyBuilder.append(CACHE_KEY_DELIMITER).append(entry.getDtLastModified());
+            }
+            cacheKeyBuilder.append(CACHE_KEY_DELIMITER).append(entry.getSize());
+            cacheKey = cacheKeyBuilder.toString();
+
+            if (duplicateFilesCache.getIfPresent(cacheKey)) {
+                return true;
+            }
+        }
+
+
         // Convert to persistence object
         FileFilter qo = entry.toPersistObject();
         
@@ -167,6 +192,9 @@ public class HibernateBaseFileTransferDaoImpl implements BaseFileTransferDao
         if (resultObject != null)
         {
             logDuplicateFileFound(resultObject);
+            if (duplicateFilesCache != null && cacheKey != null) {
+                duplicateFilesCache.put(cacheKey, Boolean.TRUE);
+            }
             return true;
         }
         return false;
@@ -356,5 +384,13 @@ public class HibernateBaseFileTransferDaoImpl implements BaseFileTransferDao
         sb.append(']');
         return sb;
     }
-    
+
+    public Cache<String, Boolean> getDuplicateFilesCache() {
+        return duplicateFilesCache;
+    }
+
+    public void setDuplicateFilesCache(Cache<String, Boolean> duplicateFilesCache) {
+        this.duplicateFilesCache = duplicateFilesCache;
+    }
+
 }

@@ -244,21 +244,20 @@ public class SFTPConnectionImpl extends BaseFileTransferConnectionImpl implement
         BaseFileTransferDao baseFileTransferDao = DataAccessUtil.getBaseFileTransferDao();
 
         FileDiscoveryCommand fileDiscoveryCommand = new FileDiscoveryCommand(sourceDir, filenamePattern,
-            baseFileTransferDao, minAge, filterDuplicates, filterOnFilename, filterOnLastModifiedDate, isRecursive);
+            baseFileTransferDao, minAge, filterDuplicates, filterOnFilename, filterOnLastModifiedDate, isRecursive, chronological, true);
 
         // Discover any new files
         List<?> entries = executeCommand(fileDiscoveryCommand, executionContext).getResultList();
-        if (chronological)
-        {
-            List<ClientListEntry> list = (List<ClientListEntry>)entries;
-            logger.info("Sorting entries list by chronological order.");
-            Collections.sort(list, new OlderFirstClientListEntryComparator());
+
+        if (logger.isDebugEnabled()) {
+            logger.debug("got entries from FileDiscoveryCommand: [" + entries + "]"); //$NON-NLS-1$ //$NON-NLS-2$
         }
-        logger.debug("got entries from FileDiscoveryCommand: [" + entries + "]"); //$NON-NLS-1$ //$NON-NLS-2$
+
         // If there are any new files, only source the first one
         // TODO this should be configurable
         if (!entries.isEmpty())
         {
+            // uses the "onlyFirstResult" flag in FileDiscoveryCommand above.
             ClientListEntry entry = (ClientListEntry) entries.get(0);
             String fullMovePath = moveOnSuccessNewPath;
             //if moveOnSuccess is true, then the path is appended to include the file name.
